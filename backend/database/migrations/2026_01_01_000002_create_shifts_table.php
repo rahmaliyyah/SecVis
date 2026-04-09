@@ -5,16 +5,15 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
     public function up(): void {
-        Schema::create('users', function (Blueprint $table) {
+        Schema::create('shifts', function (Blueprint $table) {
             $table->id();
-            $table->string('nama', 100);
-            $table->string('email', 100)->unique();
-            $table->string('password');
-            $table->enum('role', ['manager', 'hr', 'admin']);
+            $table->string('nama_shift', 50);
+            $table->time('jam_mulai');
+            $table->time('jam_selesai');
             $table->timestamps();
         });
     }
     public function down(): void {
-        Schema::dropIfExists('users');
+        Schema::dropIfExists('shifts');
     }
 };

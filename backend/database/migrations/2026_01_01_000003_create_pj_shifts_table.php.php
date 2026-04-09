@@ -5,16 +5,12 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
     public function up(): void {
-        Schema::create('users', function (Blueprint $table) {
+        Schema::create('pj_shifts', function (Blueprint $table) {
             $table->id();
             $table->string('nama', 100);
-            $table->string('email', 100)->unique();
-            $table->string('password');
-            $table->enum('role', ['manager', 'hr', 'admin']);
+            $table->foreignId('shift_id')->constrained('shifts')->onDelete('cascade');
             $table->timestamps();
         });
     }
-    public function down(): void {
-        Schema::dropIfExists('users');
-    }
+    public function down(): void { Schema::dropIfExists('pj_shifts'); }
 };
