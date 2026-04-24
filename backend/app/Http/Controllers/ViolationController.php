@@ -7,10 +7,11 @@ use App\Models\Shift;
 use App\Models\Violation;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\Http;
 
 class ViolationController extends Controller
 {
+    // POST /api/violations — dipanggil edge device, tanpa token
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -31,14 +32,18 @@ class ViolationController extends Controller
             $shift = Shift::orderBy('id')->first();
         }
 
+        // Simpan pelanggaran
         $violation = Violation::create([
             'camera_id'         => $validated['camera_id'],
             'shift_id'          => $shift->id,
             'jenis_pelanggaran' => $validated['jenis_pelanggaran'],
             'confidence_score'  => $validated['confidence_score'],
             'foto_bukti'        => $validated['foto_bukti'],
-            'timestamp_deteksi' => Carbon::parse($validated['timestamp_deteksi'])->format('Y-m-d H:i:s'), // fix: convert ISO 8601 ke format MySQL
+            'timestamp_deteksi' => Carbon::parse($validated['timestamp_deteksi'])->format('Y-m-d H:i:s'),
         ]);
+
+        // Load relasi camera untuk keperluan notifikasi
+        $violation->load('camera');
 
         // Cooldown check
         $inCooldown = Notification::where('camera_id', $validated['camera_id'])
@@ -46,10 +51,39 @@ class ViolationController extends Controller
             ->exists();
 
         if (!$inCooldown) {
+            $statusPengiriman = 'gagal';
+
+            try {
+                $token  = env('TELEGRAM_BOT_TOKEN');
+                $chatId = env('TELEGRAM_CHAT_ID');
+
+                $pesan = "🚨 *PELANGGARAN K3 TERDETEKSI*\n\n"
+                       . "📍 Lokasi: " . $violation->camera->lokasi . "\n"
+                       . "⏰ Waktu: " . $violation->timestamp_deteksi . "\n"
+                       . "🔄 Shift: " . $shift->nama_shift . "\n"
+                       . "⚠️ Pelanggaran: " . strtoupper(str_replace('_', ' ', $violation->jenis_pelanggaran)) . "\n"
+                       . "📊 Confidence: " . $violation->confidence_score . "%";
+
+                $response = Http::get(
+                    "https://api.telegram.org/bot{$token}/sendMessage",
+                    [
+                        'chat_id'    => $chatId,
+                        'text'       => $pesan,
+                        'parse_mode' => 'Markdown',
+                    ]
+                );
+
+                if ($response->successful()) {
+                    $statusPengiriman = 'terkirim';
+                }
+            } catch (\Exception $e) {
+                $statusPengiriman = 'gagal';
+            }
+
             Notification::create([
                 'violation_id'      => $violation->id,
                 'camera_id'         => $validated['camera_id'],
-                'status_pengiriman' => 'terkirim',
+                'status_pengiriman' => $statusPengiriman,
                 'timestamp_kirim'   => now(),
             ]);
         }
@@ -69,6 +103,7 @@ class ViolationController extends Controller
         ], 201);
     }
 
+    // GET /api/violations — butuh token
     public function index(Request $request)
     {
         $query = Violation::with(['shift', 'camera'])
@@ -88,7 +123,7 @@ class ViolationController extends Controller
         }
 
         $perPage = $request->per_page ?? 20;
-        $data = $query->paginate($perPage);
+        $data    = $query->paginate($perPage);
 
         return response()->json([
             'success' => true,
@@ -109,6 +144,7 @@ class ViolationController extends Controller
         ]);
     }
 
+    // GET /api/violations/{id}
     public function show($id)
     {
         $v = Violation::with(['shift', 'camera'])->findOrFail($id);
