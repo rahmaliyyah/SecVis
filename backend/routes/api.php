@@ -48,8 +48,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── ADMIN ONLY ──
     Route::middleware('role:admin')->group(function () {
-        Route::post('/shifts',      [ShiftController::class, 'store']);
-        Route::put('/shifts/{id}',  [ShiftController::class, 'update']);
-        Route::put('/cameras/{id}', [CameraController::class, 'update']);
+        Route::post('/shifts',         [ShiftController::class, 'store']);
+        Route::put('/shifts/{id}',     [ShiftController::class, 'update']);
+        Route::delete('/shifts/{id}',  [ShiftController::class, 'destroy']);
+        Route::post('/cameras',        [CameraController::class, 'store']);
+        Route::put('/cameras/{id}',    [CameraController::class, 'update']);
+        Route::delete('/cameras/{id}', [CameraController::class, 'destroy']);
     });
 });

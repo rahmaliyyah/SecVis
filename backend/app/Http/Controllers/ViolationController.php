@@ -16,11 +16,20 @@ class ViolationController extends Controller
     {
         $validated = $request->validate([
             'camera_id'         => 'required|exists:cameras,id',
-            'jenis_pelanggaran' => 'required|in:no_helmet,no_vest,no_boots,no_gloves,no_glasses',
+            'jenis_pelanggaran' => 'required|in:no-helmet,no-vest,no-boots,no-gloves,no-glasses',
             'confidence_score'  => 'required|numeric|min:0|max:100',
             'foto_bukti'        => 'required|string',
             'timestamp_deteksi' => 'required|date',
         ]);
+
+        // Double check confidence score minimum 50%
+        if ($validated['confidence_score'] < 50) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pelanggaran diabaikan karena confidence score terlalu rendah (minimum 50%)',
+                'data'    => null,
+            ], 422);
+        }
 
         // Tentukan shift aktif otomatis dari timestamp
         $jam = Carbon::parse($validated['timestamp_deteksi'])->format('H:i:s');
@@ -57,21 +66,34 @@ class ViolationController extends Controller
                 $token  = env('TELEGRAM_BOT_TOKEN');
                 $chatId = env('TELEGRAM_CHAT_ID');
 
-                $pesan = "🚨 *PELANGGARAN K3 TERDETEKSI*\n\n"
-                       . "📍 Lokasi: " . $violation->camera->lokasi . "\n"
-                       . "⏰ Waktu: " . $violation->timestamp_deteksi . "\n"
-                       . "🔄 Shift: " . $shift->nama_shift . "\n"
-                       . "⚠️ Pelanggaran: " . strtoupper(str_replace('_', ' ', $violation->jenis_pelanggaran)) . "\n"
-                       . "📊 Confidence: " . $violation->confidence_score . "%";
+                $caption = "🚨 *PELANGGARAN K3 TERDETEKSI*\n\n"
+                         . "📍 Lokasi: " . $violation->camera->lokasi . "\n"
+                         . "⏰ Waktu: " . $violation->timestamp_deteksi . "\n"
+                         . "🔄 Shift: " . $shift->nama_shift . "\n"
+                         . "⚠️ Pelanggaran: " . strtoupper(str_replace('_', ' ', $violation->jenis_pelanggaran)) . "\n"
+                         . "📊 Confidence: " . $violation->confidence_score . "%";
 
-                $response = Http::get(
-                    "https://api.telegram.org/bot{$token}/sendMessage",
-                    [
-                        'chat_id'    => $chatId,
-                        'text'       => $pesan,
-                        'parse_mode' => 'Markdown',
-                    ]
-                );
+                $fotoPath = storage_path('app/public/' . $violation->foto_bukti);
+
+                if (file_exists($fotoPath)) {
+                    // Kirim dengan foto
+                    $response = Http::attach('photo', file_get_contents($fotoPath), basename($fotoPath))
+                        ->post("https://api.telegram.org/bot{$token}/sendPhoto", [
+                            'chat_id'    => $chatId,
+                            'caption'    => $caption,
+                            'parse_mode' => 'Markdown',
+                        ]);
+                } else {
+                    // Kirim tanpa foto kalau file tidak ditemukan
+                    $response = Http::get(
+                        "https://api.telegram.org/bot{$token}/sendMessage",
+                        [
+                            'chat_id'    => $chatId,
+                            'text'       => $caption . "\n\n⚠️ _Foto bukti tidak tersedia_",
+                            'parse_mode' => 'Markdown',
+                        ]
+                    );
+                }
 
                 if ($response->successful()) {
                     $statusPengiriman = 'terkirim';

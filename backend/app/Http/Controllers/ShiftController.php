@@ -23,7 +23,7 @@ class ShiftController extends Controller
         ]);
     }
 
-    // GET /api/shifts/active — tanpa token (dipakai backend internal)
+    // GET /api/shifts/active — tanpa token
     public function active()
     {
         $jam = now()->format('H:i:s');
@@ -92,6 +92,18 @@ class ShiftController extends Controller
                 'jam_mulai'   => $shift->jam_mulai,
                 'jam_selesai' => $shift->jam_selesai,
             ],
+        ]);
+    }
+
+    // DELETE /api/shifts/{id} — admin only
+    public function destroy($id)
+    {
+        $shift = Shift::findOrFail($id);
+        $shift->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Shift berhasil dihapus',
         ]);
     }
 }
