@@ -22,14 +22,14 @@ class ViolationController extends Controller
             'timestamp_deteksi' => 'required|date',
         ]);
 
-        // Double check confidence score minimum 50%
-        if ($validated['confidence_score'] < 50) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Pelanggaran diabaikan karena confidence score terlalu rendah (minimum 50%)',
-                'data'    => null,
-            ], 422);
-        }
+        // Double check confidence score minimum 80%
+        if ($validated['confidence_score'] < 80) {
+    return response()->json([
+        'success' => false,
+        'message' => 'Pelanggaran diabaikan karena confidence score terlalu rendah (minimum 80%)',
+        'data'    => null,
+    ], 422);
+}
 
         // Tentukan shift aktif otomatis dari timestamp
         $jam = Carbon::parse($validated['timestamp_deteksi'])->format('H:i:s');
@@ -55,9 +55,9 @@ class ViolationController extends Controller
         $violation->load('camera');
 
         // Cooldown check
-        $inCooldown = Notification::where('camera_id', $validated['camera_id'])
-            ->where('timestamp_kirim', '>=', now()->subSeconds(60))
-            ->exists();
+       $inCooldown = Notification::where('camera_id', $validated['camera_id'])
+    ->where('timestamp_kirim', '>=', now()->subSeconds(10))
+    ->exists();
 
         if (!$inCooldown) {
             $statusPengiriman = 'gagal';
