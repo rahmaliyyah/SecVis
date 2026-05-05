@@ -6,7 +6,43 @@ import {
   BarChart, Bar, PieChart, Pie, Cell, Legend
 } from 'recharts'
 
-const COLORS = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6']
+const COLORS = ['#7aa2f7', '#f7768e', '#e0af68', '#9ece6a', '#bb9af7']
+
+const jenisLabel = {
+  'no-helmet'  : 'No Helmet',
+  'no-vest'    : 'No Vest',
+  'no-boots'   : 'No Boots',
+  'no-gloves'  : 'No Gloves',
+  'no-glasses' : 'No Glasses',
+}
+
+const cardStyle = {
+  background: '#13151f',
+  border: '1px solid #1e2130',
+  borderRadius: '12px',
+  padding: '20px 22px',
+}
+
+const labelStyle = {
+  fontSize: '11px',
+  fontWeight: '600',
+  letterSpacing: '0.1em',
+  textTransform: 'uppercase',
+  color: '#3e4455',
+  marginBottom: '8px',
+}
+
+const CustomTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null
+  return (
+    <div style={{ background: '#13151f', border: '1px solid #1e2130', borderRadius: '8px', padding: '10px 14px', fontSize: '12px', color: '#a0a8bc' }}>
+      <div style={{ color: '#5a6070', marginBottom: '4px' }}>{label}</div>
+      {payload.map((p, i) => (
+        <div key={i} style={{ color: p.color }}>{p.name}: <strong>{p.value}</strong></div>
+      ))}
+    </div>
+  )
+}
 
 export default function Dashboard() {
   const [summary, setSummary] = useState(null)
@@ -18,18 +54,18 @@ export default function Dashboard() {
   const today = new Date().toISOString().split('T')[0]
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
-  const fetchData = async () => {
+  const fetchAll = async () => {
     try {
-      const [summaryRes, trendRes, shiftRes, typeRes] = await Promise.all([
+      const [s, t, sh, ty] = await Promise.all([
         api.get('/dashboard/summary'),
         api.get(`/dashboard/trend?tanggal_mulai=${sevenDaysAgo}&tanggal_selesai=${today}`),
         api.get('/dashboard/by-shift?periode=bulanan'),
         api.get('/dashboard/by-type?periode=bulanan'),
       ])
-      setSummary(summaryRes.data.data)
-      setTrend(trendRes.data.data)
-      setByShift(shiftRes.data.data)
-      setByType(typeRes.data.data)
+      setSummary(s.data.data)
+      setTrend(t.data.data)
+      setByShift(sh.data.data)
+      setByType(ty.data.data)
     } catch (err) {
       console.error(err)
     } finally {
@@ -38,8 +74,7 @@ export default function Dashboard() {
   }
 
   useEffect(() => {
-    fetchData()
-    // Polling tiap 10 detik untuk KPI
+    fetchAll()
     const interval = setInterval(() => {
       api.get('/dashboard/summary').then(res => setSummary(res.data.data))
     }, 10000)
@@ -48,81 +83,103 @@ export default function Dashboard() {
 
   if (loading) return (
     <Layout>
-      <div className="flex items-center justify-center h-64 text-gray-500">Memuat data...</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', color: '#3e4455', fontSize: '13px' }}>
+        Memuat data...
+      </div>
     </Layout>
   )
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <h2 className="text-xl font-bold text-gray-800">Dashboard Monitoring K3</h2>
+      <style>{`
+        .chart-container { background: #13151f; border: 1px solid #1e2130; border-radius: 12px; padding: 20px 22px; }
+        .chart-title { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #3e4455; margin-bottom: 18px; }
+      `}</style>
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-            <p className="text-sm text-gray-500">Hari Ini</p>
-            <p className="text-3xl font-bold text-blue-600 mt-1">{summary?.total_hari_ini ?? 0}</p>
-            <p className="text-xs text-gray-400 mt-1">pelanggaran</p>
+      <div style={{ marginBottom: '24px' }}>
+        <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#c8ccd8', margin: 0, letterSpacing: '-0.01em' }}>
+          Dashboard Monitoring
+        </h2>
+        <p style={{ fontSize: '12px', color: '#3e4455', marginTop: '4px' }}>
+          Area Maintenance · PT Epson Indonesia
+        </p>
+      </div>
+
+      {/* KPI Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', marginBottom: '20px' }}>
+        <div style={cardStyle}>
+          <div style={labelStyle}>Hari Ini</div>
+          <div style={{ fontSize: '32px', fontWeight: '600', color: '#7aa2f7', fontFamily: "'DM Mono', monospace", lineHeight: 1 }}>
+            {summary?.total_hari_ini ?? 0}
           </div>
-          <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-            <p className="text-sm text-gray-500">Minggu Ini</p>
-            <p className="text-3xl font-bold text-yellow-500 mt-1">{summary?.total_minggu_ini ?? 0}</p>
-            <p className="text-xs text-gray-400 mt-1">pelanggaran</p>
+          <div style={{ fontSize: '11.5px', color: '#3e4455', marginTop: '6px' }}>pelanggaran terdeteksi</div>
+        </div>
+        <div style={cardStyle}>
+          <div style={labelStyle}>Minggu Ini</div>
+          <div style={{ fontSize: '32px', fontWeight: '600', color: '#e0af68', fontFamily: "'DM Mono', monospace", lineHeight: 1 }}>
+            {summary?.total_minggu_ini ?? 0}
           </div>
-          <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-            <p className="text-sm text-gray-500">Bulan Ini</p>
-            <p className="text-3xl font-bold text-red-500 mt-1">{summary?.total_bulan_ini ?? 0}</p>
-            <p className="text-xs text-gray-400 mt-1">pelanggaran</p>
+          <div style={{ fontSize: '11.5px', color: '#3e4455', marginTop: '6px' }}>pelanggaran terdeteksi</div>
+        </div>
+        <div style={cardStyle}>
+          <div style={labelStyle}>Bulan Ini</div>
+          <div style={{ fontSize: '32px', fontWeight: '600', color: '#f7768e', fontFamily: "'DM Mono', monospace", lineHeight: 1 }}>
+            {summary?.total_bulan_ini ?? 0}
           </div>
-          <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-            <p className="text-sm text-gray-500">Shift Terbanyak</p>
-            <p className="text-xl font-bold text-purple-600 mt-1">{summary?.shift_terbanyak?.nama_shift ?? '-'}</p>
-            <p className="text-xs text-gray-400 mt-1">{summary?.shift_terbanyak?.total_pelanggaran ?? 0} pelanggaran</p>
+          <div style={{ fontSize: '11.5px', color: '#3e4455', marginTop: '6px' }}>pelanggaran terdeteksi</div>
+        </div>
+        <div style={cardStyle}>
+          <div style={labelStyle}>Shift Terbanyak</div>
+          <div style={{ fontSize: '22px', fontWeight: '600', color: '#bb9af7', fontFamily: "'DM Mono', monospace", lineHeight: 1 }}>
+            {summary?.shift_terbanyak?.nama_shift ?? '-'}
+          </div>
+          <div style={{ fontSize: '11.5px', color: '#3e4455', marginTop: '6px' }}>
+            {summary?.shift_terbanyak?.total_pelanggaran ?? 0} pelanggaran
           </div>
         </div>
+      </div>
 
-        {/* Grafik Tren */}
-        <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-          <h3 className="font-semibold text-gray-700 mb-4">Tren Pelanggaran 7 Hari Terakhir</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={trend}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="tanggal" tick={{ fontSize: 11 }} />
-              <YAxis allowDecimals={false} />
-              <Tooltip />
-              <Line type="monotone" dataKey="total" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} />
-            </LineChart>
+      {/* Tren */}
+      <div className="chart-container" style={{ marginBottom: '20px' }}>
+        <div className="chart-title">Tren Pelanggaran — 7 Hari Terakhir</div>
+        <ResponsiveContainer width="100%" height={220}>
+          <LineChart data={trend}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#1e2130" />
+            <XAxis dataKey="tanggal" tick={{ fontSize: 11, fill: '#3e4455' }} axisLine={false} tickLine={false} />
+            <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#3e4455' }} axisLine={false} tickLine={false} />
+            <Tooltip content={<CustomTooltip />} />
+            <Line type="monotone" dataKey="total" name="Pelanggaran" stroke="#7aa2f7" strokeWidth={2} dot={{ r: 3, fill: '#7aa2f7' }} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Per Shift & Per Jenis */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+        <div className="chart-container">
+          <div className="chart-title">Per Shift — Bulan Ini</div>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={byShift} barSize={32}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e2130" vertical={false} />
+              <XAxis dataKey="nama_shift" tick={{ fontSize: 11, fill: '#3e4455' }} axisLine={false} tickLine={false} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#3e4455' }} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Bar dataKey="total_pelanggaran" name="Pelanggaran" fill="#7aa2f7" radius={[4, 4, 0, 0]} />
+            </BarChart>
           </ResponsiveContainer>
         </div>
-
-        {/* Grafik Per Shift & Per Jenis */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-            <h3 className="font-semibold text-gray-700 mb-4">Pelanggaran Per Shift</h3>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={byShift}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="nama_shift" tick={{ fontSize: 11 }} />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Bar dataKey="total_pelanggaran" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-            <h3 className="font-semibold text-gray-700 mb-4">Distribusi Jenis Pelanggaran</h3>
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
-                <Pie data={byType} dataKey="total" nameKey="jenis_pelanggaran" cx="50%" cy="50%" outerRadius={80} label={({ jenis_pelanggaran, persentase }) => `${jenis_pelanggaran} ${persentase}%`}>
-                  {byType.map((_, index) => (
-                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Legend />
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+        <div className="chart-container">
+          <div className="chart-title">Jenis Pelanggaran — Bulan Ini</div>
+          <ResponsiveContainer width="100%" height={200}>
+            <PieChart>
+              <Pie data={byType} dataKey="total" nameKey="jenis_pelanggaran" cx="50%" cy="50%" outerRadius={70} innerRadius={35}>
+                {byType.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+              </Pie>
+              <Legend
+                formatter={(value) => <span style={{ fontSize: '11px', color: '#5a6070' }}>{jenisLabel[value] ?? value}</span>}
+              />
+              <Tooltip content={<CustomTooltip />} />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
       </div>
     </Layout>
