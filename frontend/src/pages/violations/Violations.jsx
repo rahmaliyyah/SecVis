@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import Layout from '../../components/Layout'
 import api from '../../api/axios'
+import ExportLaporan from '../../components/ExportLaporan'
 
 const jenisLabel = {
   'no-helmet'  : 'Tidak Pakai Helm',
@@ -66,13 +67,17 @@ export default function Violations() {
         input[type=date]::-webkit-calendar-picker-indicator { filter: invert(0.3); cursor: pointer; }
       `}</style>
 
-      <div style={{ marginBottom: '24px' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#c8ccd8', margin: 0, letterSpacing: '-0.01em' }}>
-          Riwayat Pelanggaran
-        </h2>
-        <p style={{ fontSize: '12px', color: '#3e4455', marginTop: '4px' }}>
-          Seluruh event pelanggaran APD yang terdeteksi
-        </p>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+        <div>
+          <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#c8ccd8', margin: 0, letterSpacing: '-0.01em' }}>
+            Riwayat Pelanggaran
+          </h2>
+          <p style={{ fontSize: '12px', color: '#3e4455', marginTop: '4px' }}>
+            Seluruh event pelanggaran APD yang terdeteksi
+          </p>
+        </div>
+        <ExportLaporan />
       </div>
 
       {/* Filter */}
