@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\CameraController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\LaporanController;
 use Illuminate\Support\Facades\Route;
 
 // ── PUBLIC: Edge device (tanpa token) ──
@@ -45,6 +46,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Notifications — semua role
     Route::get('/notifications', [NotificationController::class, 'index']);
+
+    // Laporan PDF — semua role
+    Route::get('/laporan/export', [LaporanController::class, 'export']);
 
     // ── ADMIN ONLY ──
     Route::middleware('role:admin')->group(function () {
