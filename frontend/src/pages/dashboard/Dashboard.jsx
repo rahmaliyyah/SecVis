@@ -141,7 +141,7 @@ export default function Dashboard() {
 
       {/* Tren */}
       <div className="chart-container" style={{ marginBottom: '20px' }}>
-        <div className="chart-title">Tren Pelanggaran — 7 Hari Terakhir</div>
+        <div className="chart-title">Tren Pelanggaran - 7 Hari Terakhir</div>
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={trend}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1e2130" />
@@ -156,7 +156,7 @@ export default function Dashboard() {
       {/* Per Shift & Per Jenis */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
         <div className="chart-container">
-          <div className="chart-title">Per Shift — Bulan Ini</div>
+          <div className="chart-title">Per Shift - Bulan Ini</div>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={byShift} barSize={32}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e2130" vertical={false} />
@@ -168,7 +168,7 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </div>
         <div className="chart-container">
-          <div className="chart-title">Jenis Pelanggaran — Bulan Ini</div>
+          <div className="chart-title">Jenis Pelanggaran - Bulan Ini</div>
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie data={byType} dataKey="total" nameKey="jenis_pelanggaran" cx="50%" cy="50%" outerRadius={70} innerRadius={35}>

@@ -1,482 +1,367 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <title>Laporan Pelanggaran K3 - SecVis</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+<meta charset="UTF-8">
+<title>Laporan Pelanggaran K3 - SecVis</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 9pt;
+    color: #111;
+    background: #fff;
+    line-height: 1.4;
+    padding: 0 18px;
+  }
 
-        body {
-            font-family: 'Times New Roman', serif;
-            font-size: 10pt;
-            color: #1a1a1a;
-            background: #fff;
-        }
+  /* ─── HEADER ─── */
+  .header {
+    display: table;
+    width: 100%;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #111;
+    margin-bottom: 10px;
+  }
+  .h-logo { display: table-cell; width: 44px; vertical-align: middle; }
+  .logo-box {
+    width: 36px; height: 36px;
+    background: #111;
+    border-radius: 5px;
+    text-align: center;
+    line-height: 36px;
+    color: #fff;
+    font-size: 14pt;
+    font-weight: bold;
+  }
+  .h-info { display: table-cell; vertical-align: middle; padding-left: 10px; }
+  .h-info h1 { font-size: 11pt; color: #111; font-weight: bold; }
+  .h-info p  { font-size: 8pt; color: #555; margin-top: 1px; }
+  .h-right {
+    display: table-cell;
+    vertical-align: middle;
+    text-align: right;
+  }
+  .h-right .doc-num  { font-size: 7.5pt; color: #666; }
+  .h-right .doc-date { font-size: 8pt; color: #333; margin-top: 2px; }
 
-        /* ── HEADER ── */
-        .header {
-            border-bottom: 3px solid #1a3a6b;
-            padding-bottom: 10px;
-            margin-bottom: 14px;
-            display: table;
-            width: 100%;
-        }
-        .header-logo {
-            display: table-cell;
-            width: 60px;
-            vertical-align: middle;
-        }
-        .header-logo-box {
-            width: 48px;
-            height: 48px;
-            background: #1a3a6b;
-            border-radius: 6px;
-            text-align: center;
-            line-height: 48px;
-            color: white;
-            font-size: 16pt;
-            font-weight: bold;
-            font-family: Arial, sans-serif;
-        }
-        .header-info {
-            display: table-cell;
-            vertical-align: middle;
-            padding-left: 12px;
-        }
-        .header-info h1 {
-            font-size: 13pt;
-            color: #1a3a6b;
-            font-weight: bold;
-        }
-        .header-info p {
-            font-size: 8.5pt;
-            color: #555;
-            margin-top: 2px;
-        }
-        .header-right {
-            display: table-cell;
-            vertical-align: middle;
-            text-align: right;
-        }
-        .header-right .doc-number {
-            font-size: 8pt;
-            color: #888;
-        }
-        .header-right .doc-date {
-            font-size: 8.5pt;
-            color: #333;
-            margin-top: 3px;
-        }
+  /* ─── JUDUL ─── */
+  .report-title { text-align: center; margin: 10px 0 6px; }
+  .report-title h2 {
+    font-size: 12pt;
+    font-weight: bold;
+    color: #111;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+  .report-title .periode { font-size: 9pt; color: #444; margin-top: 2px; }
+  .title-divider {
+    border: none;
+    border-top: 1px solid #bbb;
+    margin: 8px 0 10px;
+  }
 
-        /* ── JUDUL ── */
-        .report-title {
-            text-align: center;
-            margin: 14px 0 4px;
-        }
-        .report-title h2 {
-            font-size: 12.5pt;
-            font-weight: bold;
-            color: #1a3a6b;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .report-title .periode {
-            font-size: 9.5pt;
-            color: #444;
-            margin-top: 3px;
-        }
-        .title-underline {
-            width: 100%;
-            height: 1px;
-            background: #ccc;
-            margin: 10px 0 14px;
-        }
+  /* ─── INFO BOX ─── */
+  .info-box {
+    display: table;
+    width: 100%;
+    border: 1px solid #bbb;
+    margin-bottom: 12px;
+  }
+  .info-row { display: table-row; }
+  .info-cell {
+    display: table-cell;
+    padding: 8px 12px;
+    border-right: 1px solid #bbb;
+    width: 25%;
+    vertical-align: middle;
+  }
+  .info-cell:last-child { border-right: none; }
+  .info-cell .lbl {
+    font-size: 6.5pt;
+    color: #777;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+    font-weight: bold;
+  }
+  .info-cell .val {
+    font-size: 14pt;
+    font-weight: bold;
+    color: #111;
+    line-height: 1.1;
+  }
+  .info-cell .sub { font-size: 7pt; color: #666; margin-top: 1px; }
 
-        /* ── INFO BOX ── */
-        .info-grid {
-            display: table;
-            width: 100%;
-            margin-bottom: 16px;
-            border: 1px solid #dde3ee;
-            border-radius: 4px;
-            background: #f7f9fc;
-        }
-        .info-grid-row { display: table-row; }
-        .info-cell {
-            display: table-cell;
-            padding: 9px 14px;
-            border-right: 1px solid #dde3ee;
-            width: 25%;
-        }
-        .info-cell:last-child { border-right: none; }
-        .info-cell .label {
-            font-size: 7pt;
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 2px;
-        }
-        .info-cell .value {
-            font-size: 10.5pt;
-            font-weight: bold;
-            color: #1a3a6b;
-        }
-        .info-cell .sub {
-            font-size: 7.5pt;
-            color: #666;
-            margin-top: 1px;
-        }
+  /* ─── SECTION TITLE ─── */
+  .sec-title {
+    font-size: 8pt;
+    font-weight: bold;
+    color: #111;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 3px;
+    margin: 10px 0 6px;
+  }
 
-        /* ── SECTION TITLE ── */
-        .section-title {
-            font-size: 9pt;
-            font-weight: bold;
-            color: #1a3a6b;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-left: 3px solid #1a3a6b;
-            padding-left: 7px;
-            margin: 16px 0 8px;
-        }
+  /* ─── DISTRIBUSI ─── */
+  .dist-wrap { display: table; width: 100%; margin-bottom: 10px; }
+  .dist-col  { display: table-cell; width: 50%; vertical-align: top; }
+  .dist-col:first-child { padding-right: 7px; }
+  .dist-col:last-child  { padding-left: 7px; }
 
-        /* ── DISTRIBUSI TABLE ── */
-        .dist-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 8.5pt;
-            margin-bottom: 0;
-        }
-        .dist-table th {
-            background: #f0f4fa;
-            color: #1a3a6b;
-            padding: 7px 10px;
-            text-align: left;
-            font-weight: 600;
-            border: 1px solid #dde3ee;
-        }
-        .dist-table td {
-            padding: 6px 10px;
-            border: 1px solid #dde3ee;
-            color: #333;
-        }
-        .bar-bg {
-            background: #e8ecf2;
-            border-radius: 3px;
-            height: 7px;
-            width: 100%;
-        }
-        .bar-fill {
-            background: #1a3a6b;
-            border-radius: 3px;
-            height: 7px;
-        }
+  .dist-tbl { width: 100%; border-collapse: collapse; font-size: 8pt; }
+  .dist-tbl th {
+    background: #eee;
+    color: #111;
+    padding: 5px 8px;
+    text-align: left;
+    font-weight: bold;
+    border: 1px solid #bbb;
+    font-size: 7.5pt;
+  }
+  .dist-tbl td {
+    padding: 5px 8px;
+    border: 1px solid #ccc;
+    color: #222;
+    vertical-align: middle;
+  }
+  .dist-tbl tr:nth-child(even) td { background: #f7f7f7; }
 
-        /* ── DISTRIBUSI 2-KOLOM ── */
-        .dist-wrapper {
-            display: table;
-            width: 100%;
-            margin-bottom: 14px;
-        }
-        .dist-col {
-            display: table-cell;
-            width: 50%;
-            vertical-align: top;
-        }
-        .dist-col:first-child { padding-right: 8px; }
-        .dist-col:last-child  { padding-left: 8px; }
+  /* Progress bar */
+  .bar-bg   { background: #ddd; border-radius: 3px; height: 6px; width: 100%; }
+  .bar-fill { background: #555; border-radius: 3px; height: 6px; }
 
-        /* ── RIWAYAT TABLE ── */
-        .violation-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 8pt;
-            margin-bottom: 16px;
-        }
-        .violation-table thead tr {
-            background: #1a3a6b;
-            color: white;
-        }
-        .violation-table thead th {
-            padding: 7px 9px;
-            text-align: left;
-            font-weight: 600;
-            letter-spacing: 0.2px;
-        }
-        .violation-table tbody tr:nth-child(even) { background: #f4f7fb; }
-        .violation-table tbody tr:nth-child(odd)  { background: #ffffff; }
-        .violation-table tbody td {
-            padding: 5.5px 9px;
-            border-bottom: 1px solid #e8ecf2;
-            color: #333;
-        }
+  /* ─── TABEL RIWAYAT ─── */
+  .vio-tbl { width: 100%; border-collapse: collapse; font-size: 7.5pt; }
+  .vio-tbl thead tr { background: #333; color: #fff; }
+  .vio-tbl thead th {
+    padding: 6px 8px;
+    text-align: left;
+    font-weight: bold;
+    border: 1px solid #333;
+  }
+  .vio-tbl tbody tr:nth-child(even) { background: #f5f5f5; }
+  .vio-tbl tbody tr:nth-child(odd)  { background: #fff; }
+  .vio-tbl tbody td {
+    padding: 4.5px 8px;
+    border-bottom: 1px solid #ddd;
+    color: #222;
+    vertical-align: middle;
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+  }
 
-        /* ── BADGE ── */
-        .badge {
-            display: inline-block;
-            padding: 2px 7px;
-            border-radius: 10px;
-            font-size: 7.5pt;
-            font-weight: 600;
-        }
-        .badge-helmet  { background: #fde8e8; color: #c0392b; }
-        .badge-vest    { background: #e8f0fe; color: #1a3a6b; }
-        .badge-boots   { background: #fef9e7; color: #b7860b; }
-        .badge-gloves  { background: #fef0e7; color: #e67e22; }
-        .badge-glasses { background: #eafaf1; color: #1e8449; }
+  /* ─── FOOTER ─── */
+  .footer { margin-top: 16px; border-top: 1px solid #bbb; padding-top: 10px; }
+  .sig-grid { display: table; width: 100%; }
+  .sig-cell { display: table-cell; width: 33.33%; text-align: center; padding: 0 12px; }
+  .sig-lbl  { font-size: 8pt; color: #555; margin-bottom: 36px; }
+  .sig-line {
+    border-top: 1px solid #333;
+    margin: 0 16px;
+    padding-top: 3px;
+    font-size: 8pt;
+    font-weight: bold;
+    color: #111;
+  }
+  .sig-role { font-size: 7pt; color: #777; margin-top: 2px; }
+  .page-note {
+    margin-top: 12px;
+    text-align: center;
+    font-size: 7pt;
+    color: #aaa;
+  }
 
-        /* ── FOOTER ── */
-        .footer {
-            margin-top: 24px;
-            border-top: 1px solid #ccc;
-            padding-top: 14px;
-        }
-        .signature-grid { display: table; width: 100%; }
-        .signature-cell {
-            display: table-cell;
-            width: 33%;
-            text-align: center;
-            padding: 0 10px;
-        }
-        .signature-label {
-            font-size: 8.5pt;
-            color: #555;
-            margin-bottom: 44px;
-        }
-        .signature-line {
-            border-top: 1px solid #333;
-            margin: 0 20px;
-            padding-top: 4px;
-            font-size: 8.5pt;
-            color: #333;
-            font-weight: bold;
-        }
-        .signature-role {
-            font-size: 7.5pt;
-            color: #777;
-            margin-top: 2px;
-        }
-        .page-footer {
-            margin-top: 16px;
-            text-align: center;
-            font-size: 7.5pt;
-            color: #aaa;
-        }
-        .no-data {
-            text-align: center;
-            padding: 20px;
-            color: #999;
-            font-style: italic;
-            font-size: 8.5pt;
-        }
-    </style>
+  .no-data { text-align: center; padding: 16px; color: #aaa; font-style: italic; font-size: 8pt; }
+  .mono    { font-family: 'Courier New', Courier, monospace; }
+  .center  { text-align: center; }
+  .bold    { font-weight: bold; }
+</style>
 </head>
 <body>
 
-    {{-- HEADER --}}
-    <div class="header">
-        <div class="header-logo">
-            <div class="header-logo-box">S</div>
-        </div>
-        <div class="header-info">
-            <h1>SecVis — Sistem Monitoring K3</h1>
-            <p>PT Epson Indonesia · Area Maintenance</p>
-        </div>
-        <div class="header-right">
-            <div class="doc-number">No. Dok: SV-LAP-{{ str_pad($nomor_laporan, 4, '0', STR_PAD_LEFT) }}</div>
-            <div class="doc-date">Dicetak: {{ $tanggal_cetak }}</div>
-        </div>
+{{-- HEADER --}}
+<div class="header">
+  <div class="h-logo">
+    <div class="logo-box">S</div>
+  </div>
+  <div class="h-info">
+    <h1>SecVis: Sistem Monitoring K3</h1>
+    <p>PT Epson Indonesia · Area Maintenance</p>
+  </div>
+  <div class="h-right">
+    <div class="doc-num">No. Dok: SV-LAP-{{ str_pad($nomor_laporan, 4, '0', STR_PAD_LEFT) }}</div>
+    <div class="doc-date">Dicetak: {{ $tanggal_cetak }}</div>
+  </div>
+</div>
+
+{{-- JUDUL --}}
+<div class="report-title">
+  <h2>Laporan Pelanggaran K3</h2>
+  <div class="periode">Periode: {{ $label_periode }}</div>
+</div>
+<hr class="title-divider">
+
+{{-- INFO BOX --}}
+<div class="info-box">
+  <div class="info-row">
+    <div class="info-cell">
+      <div class="lbl">Total Pelanggaran</div>
+      <div class="val">{{ $total_pelanggaran }}</div>
+      <div class="sub">kejadian terdeteksi</div>
     </div>
-
-    {{-- JUDUL --}}
-    <div class="report-title">
-        <h2>Laporan Pelanggaran K3</h2>
-        <div class="periode">Periode: {{ $label_periode }}</div>
+    <div class="info-cell">
+      <div class="lbl">Shift Terbanyak</div>
+      <div class="val">{{ $shift_terbanyak['nama'] ?? '—' }}</div>
+      <div class="sub">{{ $shift_terbanyak['total'] ?? 0 }} pelanggaran</div>
     </div>
-    <div class="title-underline"></div>
-
-    {{-- INFO RINGKASAN --}}
-    <div class="info-grid">
-        <div class="info-grid-row">
-            <div class="info-cell">
-                <div class="label">Total Pelanggaran</div>
-                <div class="value">{{ $total_pelanggaran }}</div>
-                <div class="sub">kejadian terdeteksi</div>
-            </div>
-            <div class="info-cell">
-                <div class="label">Shift Terbanyak</div>
-                <div class="value">{{ $shift_terbanyak['nama'] ?? '-' }}</div>
-                <div class="sub">{{ $shift_terbanyak['total'] ?? 0 }} pelanggaran</div>
-            </div>
-            <div class="info-cell">
-                <div class="label">APD Paling Dilanggar</div>
-                <div class="value">{{ $apd_terbanyak['nama'] ?? '-' }}</div>
-                <div class="sub">{{ $apd_terbanyak['total'] ?? 0 }} kejadian</div>
-            </div>
-            <div class="info-cell">
-                <div class="label">Kamera Aktif</div>
-                <div class="value">{{ $jumlah_kamera }}</div>
-                <div class="sub">unit terpasang</div>
-            </div>
-        </div>
+    <div class="info-cell">
+      <div class="lbl">APD Paling Dilanggar</div>
+      <div class="val">{{ $apd_terbanyak['nama'] ?? '—' }}</div>
+      <div class="sub">{{ $apd_terbanyak['total'] ?? 0 }} kejadian</div>
     </div>
-
-    {{-- DISTRIBUSI 2 KOLOM BERDAMPINGAN --}}
-    <div class="dist-wrapper">
-
-        {{-- Kiri: Distribusi per Jenis --}}
-        <div class="dist-col">
-            <div class="section-title">Distribusi Jenis Pelanggaran</div>
-            <table class="dist-table">
-                <thead>
-                    <tr>
-                        <th>Jenis Pelanggaran</th>
-                        <th style="width:60px">Jumlah</th>
-                        <th style="width:60px">Persen</th>
-                        <th style="width:30%">Proporsi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($by_type as $item)
-                    @php
-                        $labelMap = [
-                            'no-helmet'  => 'Tidak Memakai Helm',
-                            'no-vest'    => 'Tidak Memakai Rompi',
-                            'no-boots'   => 'Tidak Memakai Sepatu Safety',
-                            'no-gloves'  => 'Tidak Memakai Sarung Tangan',
-                            'no-glasses' => 'Tidak Memakai Kacamata',
-                        ];
-                        $badgeMap = [
-                            'no-helmet'  => 'badge-helmet',
-                            'no-vest'    => 'badge-vest',
-                            'no-boots'   => 'badge-boots',
-                            'no-gloves'  => 'badge-gloves',
-                            'no-glasses' => 'badge-glasses',
-                        ];
-                    @endphp
-                    <tr>
-                        <td>
-                            <span class="badge {{ $badgeMap[$item['jenis']] ?? '' }}">
-                                {{ $labelMap[$item['jenis']] ?? $item['jenis'] }}
-                            </span>
-                        </td>
-                        <td><strong>{{ $item['total'] }}</strong></td>
-                        <td>{{ $item['persentase'] }}%</td>
-                        <td>
-                            <div class="bar-bg">
-                                <div class="bar-fill" style="width: {{ $item['persentase'] }}%;"></div>
-                            </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr><td colspan="4" class="no-data">Tidak ada data</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-
-        {{-- Kanan: Distribusi per Shift --}}
-        <div class="dist-col">
-            <div class="section-title">Distribusi Per Shift</div>
-            <table class="dist-table">
-                <thead>
-                    <tr>
-                        <th>Shift</th>
-                        <th>Jam Operasional</th>
-                        <th style="width:70px">Jumlah</th>
-                        <th style="width:60px">Persen</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($by_shift as $item)
-                    <tr>
-                        <td><strong>{{ $item['nama_shift'] }}</strong></td>
-                        <td>{{ $item['jam_mulai'] }} – {{ $item['jam_selesai'] }}</td>
-                        <td>{{ $item['total'] }}</td>
-                        <td>{{ $total_pelanggaran > 0 ? round(($item['total'] / $total_pelanggaran) * 100, 1) : 0 }}%</td>
-                    </tr>
-                    @empty
-                    <tr><td colspan="4" class="no-data">Tidak ada data</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-
+    <div class="info-cell">
+      <div class="lbl">Kamera Aktif</div>
+      <div class="val">{{ $jumlah_kamera }}</div>
+      <div class="sub">unit terpasang</div>
     </div>
+  </div>
+</div>
 
-    {{-- RIWAYAT PELANGGARAN --}}
-    <div class="section-title">Riwayat Pelanggaran</div>
-    @if(count($violations) > 0)
-    <table class="violation-table">
-        <thead>
-            <tr>
-                <th style="width:4%">No</th>
-                <th style="width:16%">Waktu Deteksi</th>
-                <th style="width:12%">Shift</th>
-                <th style="width:11%">Kamera</th>
-                <th style="width:32%">Jenis Pelanggaran</th>
-                <th style="width:10%">Confidence</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($violations as $i => $v)
-            @php
-                $labelMap = [
-                    'no-helmet'  => 'Tidak Memakai Helm',
-                    'no-vest'    => 'Tidak Memakai Rompi',
-                    'no-boots'   => 'Tidak Memakai Sepatu Safety',
-                    'no-gloves'  => 'Tidak Memakai Sarung Tangan',
-                    'no-glasses' => 'Tidak Memakai Kacamata',
-                ];
-                $badgeMap = [
-                    'no-helmet'  => 'badge-helmet',
-                    'no-vest'    => 'badge-vest',
-                    'no-boots'   => 'badge-boots',
-                    'no-gloves'  => 'badge-gloves',
-                    'no-glasses' => 'badge-glasses',
-                ];
-            @endphp
-            <tr>
-                <td style="text-align:center; color:#999">{{ $i + 1 }}</td>
-                <td style="font-family: monospace; font-size: 7.5pt">{{ $v['timestamp'] }}</td>
-                <td>{{ $v['shift'] }}</td>
-                <td style="font-family: monospace; font-size: 7.5pt">{{ $v['kamera'] }}</td>
-                <td>
-                    <span class="badge {{ $badgeMap[$v['jenis']] ?? '' }}">
-                        {{ $labelMap[$v['jenis']] ?? $v['jenis'] }}
-                    </span>
-                </td>
-                <td style="text-align:center; font-family: monospace; font-size: 7.5pt">{{ $v['confidence'] }}%</td>
-            </tr>
-            @endforeach
-        </tbody>
+{{-- DISTRIBUSI --}}
+<div class="dist-wrap">
+  <div class="dist-col">
+    <div class="sec-title">Distribusi Jenis Pelanggaran</div>
+    <table class="dist-tbl">
+      <thead>
+        <tr>
+          <th>Jenis Pelanggaran</th>
+          <th style="width:46px">Jml</th>
+          <th style="width:46px">Persen</th>
+          <th style="width:22%">Proporsi</th>
+        </tr>
+      </thead>
+      <tbody>
+        @php
+          $labelMap = [
+            'no-helmet'  => 'Tidak Memakai Helm',
+            'no-vest'    => 'Tidak Memakai Rompi',
+            'no-boots'   => 'Tidak Memakai Sepatu Safety',
+            'no-gloves'  => 'Tidak Memakai Sarung Tangan',
+            'no-glasses' => 'Tidak Memakai Kacamata',
+          ];
+        @endphp
+        @forelse($by_type as $item)
+          <tr>
+            <td>{{ $labelMap[$item['jenis']] ?? $item['jenis'] }}</td>
+            <td class="center bold">{{ $item['total'] }}</td>
+            <td class="center">{{ $item['persentase'] }}%</td>
+            <td>
+              <div class="bar-bg">
+                <div class="bar-fill" style="width: {{ $item['persentase'] }}%"></div>
+              </div>
+            </td>
+          </tr>
+        @empty
+          <tr><td colspan="4" class="no-data">Tidak ada data</td></tr>
+        @endforelse
+      </tbody>
     </table>
-    @else
-    <p class="no-data">Tidak ada data pelanggaran pada periode ini.</p>
-    @endif
+  </div>
 
-    {{-- TANDA TANGAN --}}
-    <div class="footer">
-        <div class="signature-grid">
-            <div class="signature-cell">
-                <div class="signature-label">Dibuat oleh,</div>
-                <div class="signature-line">Manager</div>
-                <div class="signature-role">Manager Area Maintenance</div>
-            </div>
-            <div class="signature-cell">
-                <div class="signature-label">Diperiksa oleh,</div>
-                <div class="signature-line">HR / CAO</div>
-                <div class="signature-role">Human Resources / CAO</div>
-            </div>
-            <div class="signature-cell">
-                <div class="signature-label">Disetujui oleh,</div>
-                <div class="signature-line">General Manager</div>
-                <div class="signature-role">General Manager PT Epson Indonesia</div>
-            </div>
-        </div>
-        <div class="page-footer">
-            Dokumen ini digenerate otomatis oleh sistem SecVis · PT Epson Indonesia · {{ $tanggal_cetak }}
-        </div>
+  <div class="dist-col">
+    <div class="sec-title">Distribusi Per Shift</div>
+    <table class="dist-tbl">
+      <thead>
+        <tr>
+          <th>Shift</th>
+          <th>Jam Operasional</th>
+          <th style="width:46px" class="center">Jml</th>
+          <th style="width:46px" class="center">Persen</th>
+        </tr>
+      </thead>
+      <tbody>
+        @forelse($by_shift as $item)
+          <tr>
+            <td class="bold">{{ $item['nama_shift'] }}</td>
+            <td class="mono">{{ $item['jam_mulai'] }} s/d {{ $item['jam_selesai'] }}</td>
+            <td class="center bold">{{ $item['total'] }}</td>
+            <td class="center">
+              {{ $total_pelanggaran > 0 ? round(($item['total'] / $total_pelanggaran) * 100, 1) : 0 }}%
+            </td>
+          </tr>
+        @empty
+          <tr><td colspan="4" class="no-data">Tidak ada data</td></tr>
+        @endforelse
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{{-- RIWAYAT --}}
+<div class="sec-title">Riwayat Pelanggaran</div>
+@if(count($violations) > 0)
+  <table class="vio-tbl">
+    <thead>
+      <tr>
+        <th style="width:3%; text-align:center">No</th>
+        <th style="width:14%">Waktu Deteksi</th>
+        <th style="width:10%">Shift</th>
+        <th style="width:9%">Kamera</th>
+        <th style="width:35%">Jenis Pelanggaran</th>
+        <th style="width:9%; text-align:center">Confidence</th>
+      </tr>
+    </thead>
+    <tbody>
+      @foreach($violations as $i => $v)
+        @php
+          $labelMap = [
+            'no-helmet'  => 'Tidak Memakai Helm',
+            'no-vest'    => 'Tidak Memakai Rompi',
+            'no-boots'   => 'Tidak Memakai Sepatu Safety',
+            'no-gloves'  => 'Tidak Memakai Sarung Tangan',
+            'no-glasses' => 'Tidak Memakai Kacamata',
+          ];
+        @endphp
+        <tr>
+          <td class="center" style="color:#999">{{ $i + 1 }}</td>
+          <td class="mono" style="font-size:7pt">{{ $v['timestamp'] }}</td>
+          <td>{{ $v['shift'] }}</td>
+          <td class="mono" style="font-size:7pt">{{ $v['kamera'] }}</td>
+          <td>{{ $labelMap[$v['jenis']] ?? $v['jenis'] }}</td>
+          <td class="center mono" style="font-size:7pt">{{ $v['confidence'] }}%</td>
+        </tr>
+      @endforeach
+    </tbody>
+  </table>
+@else
+  <p class="no-data">Tidak ada data pelanggaran pada periode ini.</p>
+@endif
+
+{{-- TANDA TANGAN --}}
+<div class="footer">
+  <div class="sig-grid">
+    <div class="sig-cell">
+      <div class="sig-lbl">Dibuat oleh,</div>
+      <div class="sig-line">Manager</div>
+      <div class="sig-role">Manager Area Maintenance</div>
     </div>
+    <div class="sig-cell">
+      <div class="sig-lbl">Diperiksa oleh,</div>
+      <div class="sig-line">HR / CAO</div>
+      <div class="sig-role">Human Resources / CAO</div>
+    </div>
+    <div class="sig-cell">
+      <div class="sig-lbl">Disetujui oleh,</div>
+      <div class="sig-line">General Manager</div>
+      <div class="sig-role">General Manager PT Epson Indonesia</div>
+    </div>
+  </div>
+  <div class="page-note">
+    Dokumen ini digenerate otomatis oleh sistem SecVis &middot; PT Epson Indonesia &middot; {{ $tanggal_cetak }}
+  </div>
+</div>
 
 </body>
 </html>

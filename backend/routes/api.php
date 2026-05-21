@@ -24,6 +24,9 @@ Route::get('/notifications/cooldown-check', [NotificationController::class, 'coo
 // ── PROTECTED: Semua role yang sudah login ──
 Route::middleware('auth:sanctum')->group(function () {
 
+// Laporan Excel — semua role
+Route::get('/laporan/export-excel', [LaporanController::class, 'exportExcel']);
+
     // Auth
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me',      [AuthController::class, 'me']);
