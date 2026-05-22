@@ -31,21 +31,30 @@ const icons = {
   ),
 }
 
+// Design system colors
+const C = {
+  primary: '#003399',
+  primaryLight: '#e8eef8',
+  secondary: '#FF8800',
+  bg: '#ffffff',
+  border: '#e4e8f0',
+  textMain: '#1a2340',
+  textSub: '#7a85a0',
+  textMuted: '#b0bac8',
+}
+
 export default function Sidebar() {
   const location = useLocation()
-  const navigate = useNavigate()
-  const user = getUser()
+  const navigate  = useNavigate()
+  const user      = getUser()
 
-  const handleLogout = async () => {
-    removeAuth()
-    navigate('/login')
-  }
+  const handleLogout = () => { removeAuth(); navigate('/login') }
 
   const menus = [
-    { path: '/dashboard', label: 'Dashboard', icon: icons.dashboard },
+    { path: '/dashboard', label: 'Dashboard',  icon: icons.dashboard  },
     { path: '/violations', label: 'Pelanggaran', icon: icons.violations },
     ...(isAdmin() ? [
-      { path: '/shifts', label: 'Shift', icon: icons.shifts },
+      { path: '/shifts',  label: 'Shift',  icon: icons.shifts  },
       { path: '/cameras', label: 'Kamera', icon: icons.cameras },
     ] : []),
   ]
@@ -56,115 +65,63 @@ export default function Sidebar() {
 
   return (
     <div style={{
-      width: '240px',
-      minHeight: '100vh',
-      background: '#0f1117',
-      display: 'flex',
-      flexDirection: 'column',
-      borderRight: '1px solid #1e2130',
-      fontFamily: "'DM Sans', system-ui, sans-serif",
+      width: '240px', minHeight: '100vh',
+      background: C.bg,
+      display: 'flex', flexDirection: 'column',
+      borderRight: `1px solid ${C.border}`,
+      fontFamily: "'Inter', system-ui, sans-serif",
     }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
-
-        .sidebar-link {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 9px 12px;
-          border-radius: 8px;
-          font-size: 13.5px;
-          font-weight: 400;
-          color: #5a6070;
-          text-decoration: none;
-          transition: all 0.15s ease;
-          letter-spacing: 0.01em;
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+        .sb-link {
+          display: flex; align-items: center; gap: 10px;
+          padding: 9px 12px; border-radius: 8px;
+          font-size: 13.5px; font-weight: 400;
+          color: ${C.textSub}; text-decoration: none;
+          transition: all 0.15s ease; letter-spacing: 0.01em;
         }
-        .sidebar-link:hover {
-          background: #191c27;
-          color: #c8ccd8;
-        }
-        .sidebar-link.active {
-          background: #1a2035;
-          color: #7aa2f7;
-          font-weight: 500;
-        }
-        .sidebar-link.active .link-icon {
-          color: #7aa2f7;
-        }
-        .link-icon {
-          flex-shrink: 0;
-          color: #3e4455;
-          transition: color 0.15s ease;
-        }
-        .sidebar-link:hover .link-icon {
-          color: #5a6070;
-        }
-
-        .active-pip {
-          width: 3px;
-          height: 16px;
-          background: #7aa2f7;
-          border-radius: 0 2px 2px 0;
-          position: absolute;
-          left: 0;
-        }
-
+        .sb-link:hover { background: ${C.primaryLight}; color: ${C.primary}; }
+        .sb-link.active { background: ${C.primaryLight}; color: ${C.primary}; font-weight: 600; }
+        .sb-link.active .sb-icon { color: ${C.primary}; }
+        .sb-icon { flex-shrink: 0; color: ${C.textMuted}; transition: color 0.15s; }
+        .sb-link:hover .sb-icon { color: ${C.primary}; }
+        .active-pip { width: 3px; height: 16px; background: ${C.primary}; border-radius: 0 2px 2px 0; position: absolute; left: 0; }
         .logout-btn {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 9px 12px;
-          border-radius: 8px;
-          font-size: 13.5px;
-          font-weight: 400;
-          color: #3e4455;
-          background: none;
-          border: none;
-          cursor: pointer;
-          width: 100%;
-          text-align: left;
-          transition: all 0.15s ease;
-          letter-spacing: 0.01em;
-          font-family: inherit;
+          display: flex; align-items: center; gap: 10px;
+          padding: 9px 12px; border-radius: 8px;
+          font-size: 13.5px; font-weight: 400;
+          color: ${C.textMuted}; background: none; border: none;
+          cursor: pointer; width: 100%; text-align: left;
+          transition: all 0.15s; font-family: inherit;
         }
-        .logout-btn:hover {
-          background: #1e1520;
-          color: #f7768e;
-        }
-        .logout-btn:hover .logout-icon { color: #f7768e; }
-        .logout-icon { color: #3e4455; transition: color 0.15s ease; flex-shrink: 0; }
-
-        .section-label {
-          font-size: 10px;
-          font-weight: 600;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-          color: #2a2f3f;
-          padding: 0 12px;
-          margin-bottom: 6px;
+        .logout-btn:hover { background: #fff0f0; color: #e53e3e; }
+        .logout-btn:hover .lo-icon { color: #e53e3e; }
+        .lo-icon { color: ${C.textMuted}; transition: color 0.15s; flex-shrink: 0; }
+        .sec-lbl {
+          font-size: 10px; font-weight: 600; letter-spacing: 0.12em;
+          text-transform: uppercase; color: ${C.textMuted};
+          padding: 0 12px; margin-bottom: 6px;
         }
       `}</style>
 
       {/* Brand */}
-      <div style={{ padding: '22px 20px 18px', borderBottom: '1px solid #1e2130' }}>
+      <div style={{ padding: '20px 20px 16px', borderBottom: `1px solid ${C.border}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{
-            width: '28px', height: '28px',
-            background: 'linear-gradient(135deg, #3d59a1 0%, #7aa2f7 100%)',
-            borderRadius: '7px',
+            width: '32px', height: '32px',
+            background: C.primary, borderRadius: '8px',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
               <circle cx="12" cy="12" r="3"/>
             </svg>
           </div>
           <div>
-            <div style={{ fontSize: '14px', fontWeight: '600', color: '#c8ccd8', letterSpacing: '-0.01em', fontFamily: "'DM Mono', monospace" }}>
+            <div style={{ fontSize: '15px', fontWeight: '700', color: C.primary, letterSpacing: '-0.01em', fontFamily: "'DM Mono', monospace" }}>
               SecVis
             </div>
-            <div style={{ fontSize: '10.5px', color: '#2e3347', marginTop: '1px', fontWeight: '400' }}>
+            <div style={{ fontSize: '10px', color: C.textMuted, marginTop: '1px' }}>
               PT Epson Indonesia
             </div>
           </div>
@@ -172,25 +129,22 @@ export default function Sidebar() {
       </div>
 
       {/* User */}
-      <div style={{ padding: '14px 20px', borderBottom: '1px solid #1e2130' }}>
+      <div style={{ padding: '14px 20px', borderBottom: `1px solid ${C.border}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{
-            width: '32px', height: '32px',
-            background: '#1a2035',
-            border: '1px solid #2a3558',
-            borderRadius: '8px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '11px', fontWeight: '600', color: '#7aa2f7',
-            fontFamily: "'DM Mono', monospace",
-            flexShrink: 0,
+            width: '34px', height: '34px',
+            background: C.primaryLight, border: `1.5px solid ${C.primary}20`,
+            borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '12px', fontWeight: '700', color: C.primary,
+            fontFamily: "'DM Mono', monospace", flexShrink: 0,
           }}>
             {initials}
           </div>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: '13px', fontWeight: '500', color: '#a0a8bc', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ fontSize: '13px', fontWeight: '600', color: C.textMain, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {user?.nama}
             </div>
-            <div style={{ fontSize: '10.5px', color: '#3e4455', marginTop: '1px', textTransform: 'capitalize' }}>
+            <div style={{ fontSize: '11px', color: C.textSub, marginTop: '1px', textTransform: 'capitalize' }}>
               {user?.role}
             </div>
           </div>
@@ -199,17 +153,14 @@ export default function Sidebar() {
 
       {/* Nav */}
       <nav style={{ flex: 1, padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-        <div className="section-label">Menu</div>
+        <div className="sec-lbl">Menu</div>
         {menus.map((menu) => {
           const active = location.pathname === menu.path
           return (
             <div key={menu.path} style={{ position: 'relative' }}>
               {active && <div className="active-pip" />}
-              <Link
-                to={menu.path}
-                className={`sidebar-link ${active ? 'active' : ''}`}
-              >
-                <span className="link-icon">{menu.icon}</span>
+              <Link to={menu.path} className={`sb-link ${active ? 'active' : ''}`}>
+                <span className="sb-icon">{menu.icon}</span>
                 {menu.label}
               </Link>
             </div>
@@ -218,9 +169,9 @@ export default function Sidebar() {
       </nav>
 
       {/* Logout */}
-      <div style={{ padding: '12px', borderTop: '1px solid #1e2130' }}>
+      <div style={{ padding: '12px', borderTop: `1px solid ${C.border}` }}>
         <button className="logout-btn" onClick={handleLogout}>
-          <span className="logout-icon">{icons.logout}</span>
+          <span className="lo-icon">{icons.logout}</span>
           Logout
         </button>
       </div>
