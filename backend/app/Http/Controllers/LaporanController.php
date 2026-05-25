@@ -97,6 +97,7 @@ class LaporanController extends Controller
             'kamera'     => $v->camera->kode_kamera,
             'jenis'      => $v->jenis_pelanggaran,
             'confidence' => $v->confidence_score,
+            'foto_bukti' => $v->foto_bukti,
         ])->toArray();
 
         return compact(
@@ -141,6 +142,9 @@ class LaporanController extends Controller
             'violations'        => $report['violationsFormatted'],
         ];
 
+        $includeFoto = $request->boolean('include_foto', false);
+        $data['include_foto'] = $includeFoto;
+
         $pdf = Pdf::loadView('pdf.laporan', $data)
             ->setPaper('a4', 'landscape')
             ->setOptions([
@@ -156,7 +160,7 @@ class LaporanController extends Controller
             ]);
 
         $safeFileName = str_replace('/', '-', $namaFile);
-return $pdf->download($safeFileName . '.pdf');
+        return $pdf->download($safeFileName . '.pdf');
     }
 
     // ─── EXPORT EXCEL ────────────────────────────────────────────────────────
@@ -170,89 +174,10 @@ return $pdf->download($safeFileName . '.pdf');
             'tanggal' => 'required_if:tipe,harian|nullable|date',
         ]);
 
-        $tipe     = $request->tipe;
-        $namaFile = $this->buildFileName($tipe, $request);
-        $report   = $this->buildReportData($tipe, $request);
-
-        $spreadsheet = new Spreadsheet();
-        $sheet       = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('Riwayat Pelanggaran');
-
-        // ── Warna tema ────────────────────────────────────────────
-        $colorNavy  = '1A3A6B';
-        $colorLight = 'E8EEF9';
-        $colorWhite = 'FFFFFF';
-        $colorGray  = 'F5F7FB';
-        $colorRed   = 'C0392B';
-        $colorGreen = '1E8449';
-
-        // ── Header laporan ────────────────────────────────────────
-        $sheet->mergeCells('A1:J1');
-        $sheet->setCellValue('A1', 'LAPORAN PELANGGARAN K3 — PT EPSON INDONESIA');
-        $sheet->getStyle('A1')->applyFromArray([
-            'font'      => ['bold' => true, 'size' => 14, 'color' => ['argb' => 'FF' . $colorNavy]],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-        ]);
-        $sheet->getRowDimension(1)->setRowHeight(24);
-
-        $sheet->mergeCells('A2:J2');
-        $sheet->setCellValue('A2', 'Periode: ' . $report['label_periode'] . '   |   Dicetak: ' . Carbon::now()->format('d/m/Y H:i') . ' WIB');
-        $sheet->getStyle('A2')->applyFromArray([
-            'font'      => ['size' => 10, 'color' => ['argb' => 'FF555555']],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-        ]);
-        $sheet->getRowDimension(2)->setRowHeight(16);
-
-        // ── Ringkasan statistik ────────────────────────────────────
-        $sheet->getRowDimension(3)->setRowHeight(8);
-
-        $summaryLabels = [
-            'A4' => 'TOTAL PELANGGARAN',
-            'C4' => 'SHIFT TERBANYAK',
-            'E4' => 'APD PALING DILANGGAR',
-            'G4' => 'KAMERA AKTIF',
-        ];
-        $summaryValues = [
-            'A5' => $report['total'],
-            'C5' => ($report['shiftTerbanyak']['nama_shift'] ?? '-') . ' (' . ($report['shiftTerbanyak']['total'] ?? 0) . ')',
-            'E5' => isset($report['apdTerbanyak']) ? (($report['labelMap'][$report['apdTerbanyak']['jenis']] ?? $report['apdTerbanyak']['jenis']) . ' (' . $report['apdTerbanyak']['total'] . ')') : '-',
-            'G5' => Camera::where('status', 'aktif')->count() . ' unit',
-        ];
-
-        foreach ($summaryLabels as $cell => $label) {
-            $col   = preg_replace('/\d/', '', $cell);
-            $colEnd = chr(ord($col) + 1);
-            $row   = preg_replace('/[A-Z]/', '', $cell);
-            $sheet->mergeCells($col . $row . ':' . $colEnd . $row);
-            $sheet->setCellValue($cell, $label);
-            $sheet->getStyle($cell)->applyFromArray([
-                'font'      => ['bold' => true, 'size' => 8, 'color' => ['argb' => 'FF888888']],
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-                'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF' . $colorLight]],
-            ]);
-        }
-        foreach ($summaryValues as $cell => $value) {
-            $col   = preg_replace('/\d/', '', $cell);
-            $colEnd = chr(ord($col) + 1);
-            $row   = preg_replace('/[A-Z]/', '', $cell);
-            $sheet->mergeCells($col . $row . ':' . $colEnd . $row);
-            $sheet->setCellValue($cell, $value);
-            $sheet->getStyle($cell)->applyFromArray([
-                'font'      => ['bold' => true, 'size' => 12, 'color' => ['argb' => 'FF' . $colorNavy]],
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-                'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF' . $colorLight]],
-            ]);
-        }
-        $sheet->getRowDimension(4)->setRowHeight(18);
-        $sheet->getRowDimension(5)->setRowHeight(22);
-
-        // ── Distribusi per Jenis ──────────────────────────────────
-        $sheet->getRowDimension(6)->setRowHeight(8);
-        $sheet->mergeCells('A7:D7');
-        $sheet->setCellValue('A7', 'DISTRIBUSI PER JENIS PELANGGARAN');
-        $sheet->getStyle('A7')->applyFromArray([
-            'font' => ['bold' => true, 'size' => 9, 'color' => ['argb' => 'FF' . $colorNavy]],
-        ]);
+        $tipe       = $request->tipe;
+        $namaFile   = $this->buildFileName($tipe, $request);
+        $report     = $this->buildReportData($tipe, $request);
+        $includeFoto = $request->boolean('include_foto', false);
 
         $labelMapFull = [
             'no-helmet'  => 'Tidak Memakai Helm',
@@ -262,124 +187,237 @@ return $pdf->download($safeFileName . '.pdf');
             'no-glasses' => 'Tidak Memakai Kacamata',
         ];
 
-        $typeHeaders = ['Jenis Pelanggaran', 'Jumlah', 'Persentase'];
-        $typeRow = 8;
-        foreach (['A', 'B', 'C'] as $i => $col) {
-            $sheet->setCellValue($col . $typeRow, $typeHeaders[$i]);
-            $sheet->getStyle($col . $typeRow)->applyFromArray([
-                'font'      => ['bold' => true, 'size' => 9, 'color' => ['argb' => 'FF' . $colorWhite]],
-                'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF' . $colorNavy]],
+        $spreadsheet = new Spreadsheet();
+        $sheet       = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Laporan K3');
+
+        // ── Styles B&W ────────────────────────────────────────────
+        $boldBlack  = ['font' => ['bold' => true, 'color' => ['argb' => 'FF000000']]];
+        $headerCell = [
+            'font'      => ['bold' => true, 'size' => 9, 'color' => ['argb' => 'FFFFFFFF']],
+            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF333333']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FF999999']]],
+        ];
+        $thinBorder = ['borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FFCCCCCC']]]];
+        $altRow     = ['fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFF5F5F5']]];
+
+        // ── Logo & Header ──────────────────────────────────────────
+        $logoSecvis = public_path('images/logo-secvis.png');
+        $logoEpson  = public_path('images/logo-epson.png');
+
+        if (file_exists($logoSecvis)) {
+            $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
+            $drawing->setName('SecVis');
+            $drawing->setPath($logoSecvis);
+            $drawing->setHeight(36);
+            $drawing->setCoordinates('A1');
+            $drawing->setOffsetX(4);
+            $drawing->setOffsetY(4);
+            $drawing->setWorksheet($sheet);
+        }
+        if (file_exists($logoEpson)) {
+            $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
+            $drawing->setName('Epson');
+            $drawing->setPath($logoEpson);
+            $drawing->setHeight(28);
+            $drawing->setCoordinates('H1');
+            $drawing->setOffsetX(4);
+            $drawing->setOffsetY(8);
+            $drawing->setWorksheet($sheet);
+        }
+
+        $sheet->mergeCells('B1:G1');
+        $sheet->setCellValue('B1', 'LAPORAN PELANGGARAN K3 — PT INDONESIA EPSON INDUSTRY');
+        $sheet->getStyle('B1')->applyFromArray([
+            'font'      => ['bold' => true, 'size' => 13, 'color' => ['argb' => 'FF000000']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+        ]);
+        $sheet->getRowDimension(1)->setRowHeight(44);
+
+        $sheet->mergeCells('A2:J2');
+        $sheet->setCellValue('A2', 'Periode: ' . $report['label_periode'] . '   |   Dicetak: ' . Carbon::now()->format('d/m/Y H:i') . ' WIB');
+        $sheet->getStyle('A2')->applyFromArray([
+            'font'      => ['size' => 9, 'color' => ['argb' => 'FF666666']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+        ]);
+        $sheet->getRowDimension(2)->setRowHeight(14);
+
+        // Garis bawah header
+        $sheet->getStyle('A2:J2')->applyFromArray([
+            'borders' => ['bottom' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['argb' => 'FF000000']]],
+        ]);
+
+        // ── Ringkasan ──────────────────────────────────────────────
+        $sheet->getRowDimension(3)->setRowHeight(6);
+
+        $summaryData = [
+            ['A4','A5', 'TOTAL PELANGGARAN', (string)$report['total']],
+            ['C4','C5', 'SHIFT TERBANYAK', ($report['shiftTerbanyak']['nama_shift'] ?? '-') . ' (' . ($report['shiftTerbanyak']['total'] ?? 0) . ')'],
+            ['E4','E5', 'APD PALING DILANGGAR', isset($report['apdTerbanyak']) ? (($report['labelMap'][$report['apdTerbanyak']['jenis']] ?? $report['apdTerbanyak']['jenis']) . ' (' . $report['apdTerbanyak']['total'] . ')') : '-'],
+            ['G4','G5', 'KAMERA AKTIF', Camera::where('status', 'aktif')->count() . ' unit'],
+        ];
+        foreach ($summaryData as [$lCell, $vCell, $label, $value]) {
+            $col    = preg_replace('/\d/', '', $lCell);
+            $colEnd = chr(ord($col) + 1);
+            $row    = preg_replace('/[A-Z]/', '', $lCell);
+            $sheet->mergeCells($col . $row . ':' . $colEnd . $row);
+            $sheet->setCellValue($lCell, $label);
+            $sheet->getStyle($lCell)->applyFromArray([
+                'font'      => ['bold' => true, 'size' => 8, 'color' => ['argb' => 'FF666666']],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                'borders'   => ['bottom' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FFCCCCCC']]],
+            ]);
+            $vRow = preg_replace('/[A-Z]/', '', $vCell);
+            $sheet->mergeCells($col . $vRow . ':' . $colEnd . $vRow);
+            $sheet->setCellValue($vCell, $value);
+            $sheet->getStyle($vCell)->applyFromArray([
+                'font'      => ['bold' => true, 'size' => 13, 'color' => ['argb' => 'FF000000']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                'borders'   => ['bottom' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['argb' => 'FF000000']]],
             ]);
         }
-        $sheet->getRowDimension($typeRow)->setRowHeight(16);
+        $sheet->getRowDimension(4)->setRowHeight(16);
+        $sheet->getRowDimension(5)->setRowHeight(22);
 
+        // ── Distribusi Jenis ───────────────────────────────────────
+        $sheet->getRowDimension(6)->setRowHeight(8);
+        $sheet->mergeCells('A7:D7');
+        $sheet->setCellValue('A7', 'DISTRIBUSI JENIS PELANGGARAN');
+        $sheet->getStyle('A7')->applyFromArray(['font' => ['bold' => true, 'size' => 9]]);
+
+        $typeRow = 8;
+        foreach (['A' => 'Jenis Pelanggaran', 'B' => 'Jumlah', 'C' => 'Persentase'] as $col => $label) {
+            $sheet->setCellValue($col . $typeRow, $label);
+            $sheet->getStyle($col . $typeRow)->applyFromArray($headerCell);
+        }
+        $sheet->getRowDimension($typeRow)->setRowHeight(16);
         $typeRow++;
         foreach ($report['byType'] as $idx => $item) {
-            $bgColor = $idx % 2 === 0 ? $colorWhite : 'F0F4FA';
             $sheet->setCellValue('A' . $typeRow, $labelMapFull[$item['jenis']] ?? $item['jenis']);
             $sheet->setCellValue('B' . $typeRow, $item['total']);
             $sheet->setCellValue('C' . $typeRow, $item['persentase'] . '%');
-            $sheet->getStyle('A' . $typeRow . ':C' . $typeRow)->applyFromArray([
-                'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF' . $bgColor]],
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
-                'borders'   => ['bottom' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FFDDE3EE']]],
-            ]);
+            $style = $thinBorder;
+            if ($idx % 2 !== 0) $style = array_merge_recursive($style, $altRow);
+            $sheet->getStyle('A' . $typeRow . ':C' . $typeRow)->applyFromArray($style);
             $sheet->getStyle('B' . $typeRow . ':C' . $typeRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getRowDimension($typeRow)->setRowHeight(15);
+            $sheet->getRowDimension($typeRow)->setRowHeight(14);
             $typeRow++;
         }
 
-        // ── Distribusi per Shift ──────────────────────────────────
-        $shiftStartRow = 8; // Sama baris dengan tabel jenis (kolom E)
+        // ── Distribusi Shift ───────────────────────────────────────
+        $shiftStartRow = 8;
         $sheet->mergeCells('E7:H7');
         $sheet->setCellValue('E7', 'DISTRIBUSI PER SHIFT');
-        $sheet->getStyle('E7')->applyFromArray([
-            'font' => ['bold' => true, 'size' => 9, 'color' => ['argb' => 'FF' . $colorNavy]],
-        ]);
+        $sheet->getStyle('E7')->applyFromArray(['font' => ['bold' => true, 'size' => 9]]);
 
-        $shiftHeaders = ['Shift', 'Jam Mulai', 'Jam Selesai', 'Total'];
-        foreach (['E', 'F', 'G', 'H'] as $i => $col) {
-            $sheet->setCellValue($col . $shiftStartRow, $shiftHeaders[$i]);
-            $sheet->getStyle($col . $shiftStartRow)->applyFromArray([
-                'font'      => ['bold' => true, 'size' => 9, 'color' => ['argb' => 'FF' . $colorWhite]],
-                'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF' . $colorNavy]],
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-            ]);
+        foreach (['E' => 'Shift', 'F' => 'Jam Mulai', 'G' => 'Jam Selesai', 'H' => 'Total'] as $col => $label) {
+            $sheet->setCellValue($col . $shiftStartRow, $label);
+            $sheet->getStyle($col . $shiftStartRow)->applyFromArray($headerCell);
         }
-
         $shiftDataRow = $shiftStartRow + 1;
         foreach ($report['byShift'] as $idx => $item) {
-            $bgColor = $idx % 2 === 0 ? $colorWhite : 'F0F4FA';
             $sheet->setCellValue('E' . $shiftDataRow, $item['nama_shift']);
             $sheet->setCellValue('F' . $shiftDataRow, $item['jam_mulai']);
             $sheet->setCellValue('G' . $shiftDataRow, $item['jam_selesai']);
             $sheet->setCellValue('H' . $shiftDataRow, $item['total']);
-            $sheet->getStyle('E' . $shiftDataRow . ':H' . $shiftDataRow)->applyFromArray([
-                'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF' . $bgColor]],
-                'borders'   => ['bottom' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FFDDE3EE']]],
-            ]);
+            $style = $thinBorder;
+            if ($idx % 2 !== 0) $style = array_merge_recursive($style, $altRow);
+            $sheet->getStyle('E' . $shiftDataRow . ':H' . $shiftDataRow)->applyFromArray($style);
             $sheet->getStyle('F' . $shiftDataRow . ':H' . $shiftDataRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $shiftDataRow++;
         }
 
-        // ── Tabel riwayat pelanggaran ─────────────────────────────
+        // ── Riwayat Pelanggaran ────────────────────────────────────
         $maxDistRow = max($typeRow, $shiftDataRow) + 1;
-
         $sheet->mergeCells('A' . $maxDistRow . ':J' . $maxDistRow);
         $sheet->setCellValue('A' . $maxDistRow, 'RIWAYAT PELANGGARAN');
-        $sheet->getStyle('A' . $maxDistRow)->applyFromArray([
-            'font' => ['bold' => true, 'size' => 9, 'color' => ['argb' => 'FF' . $colorNavy]],
-        ]);
+        $sheet->getStyle('A' . $maxDistRow)->applyFromArray(['font' => ['bold' => true, 'size' => 9]]);
         $sheet->getRowDimension($maxDistRow)->setRowHeight(16);
 
         $mainHeaders = ['No', 'Waktu Deteksi', 'Shift', 'Kode Kamera', 'Jenis Pelanggaran', 'Confidence'];
         $mainCols    = ['A', 'B', 'C', 'D', 'E', 'F'];
-        $headerRow   = $maxDistRow + 1;
+        if ($includeFoto) {
+            $mainHeaders[] = 'Foto Bukti';
+            $mainCols[]    = 'G';
+        }
+        $headerRow = $maxDistRow + 1;
         foreach ($mainCols as $i => $col) {
             $sheet->setCellValue($col . $headerRow, $mainHeaders[$i]);
-            $sheet->getStyle($col . $headerRow)->applyFromArray([
-                'font'      => ['bold' => true, 'size' => 9, 'color' => ['argb' => 'FF' . $colorWhite]],
-                'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF' . $colorNavy]],
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-                'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FFDDE3EE']]],
-            ]);
+            $sheet->getStyle($col . $headerRow)->applyFromArray($headerCell);
         }
-        $sheet->getRowDimension($headerRow)->setRowHeight(18);
+        $sheet->getRowDimension($headerRow)->setRowHeight(16);
 
         $dataRow = $headerRow + 1;
         foreach ($report['violationsFormatted'] as $idx => $v) {
-            $bgColor = $idx % 2 === 0 ? $colorWhite : $colorGray;
             $sheet->setCellValue('A' . $dataRow, $idx + 1);
             $sheet->setCellValue('B' . $dataRow, $v['timestamp']);
             $sheet->setCellValue('C' . $dataRow, $v['shift']);
             $sheet->setCellValue('D' . $dataRow, $v['kamera']);
             $sheet->setCellValue('E' . $dataRow, $labelMapFull[$v['jenis']] ?? $v['jenis']);
             $sheet->setCellValue('F' . $dataRow, $v['confidence'] . '%');
-            $sheet->getStyle('A' . $dataRow . ':F' . $dataRow)->applyFromArray([
-                'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF' . $bgColor]],
-                'borders' => ['bottom' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FFDDE3EE']]],
-            ]);
+            $style = $thinBorder;
+            if ($idx % 2 !== 0) $style = array_merge_recursive($style, $altRow);
+            $sheet->getStyle('A' . $dataRow . ':F' . $dataRow)->applyFromArray($style);
             $sheet->getStyle('A' . $dataRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->getStyle('F' . $dataRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getRowDimension($dataRow)->setRowHeight(14);
+
+            if ($includeFoto) {
+                // Tinggi baris lebih besar untuk foto
+                $sheet->getRowDimension($dataRow)->setRowHeight(52);
+                $sheet->getStyle('G' . $dataRow)->applyFromArray(array_merge($thinBorder, [
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+                ]));
+
+                // Cari file foto
+                $fotoBukti = $v['foto_bukti'] ?? null;
+                $fotoPath  = $fotoBukti ? storage_path('app/public/' . $fotoBukti) : null;
+                $fotoAlt   = $fotoBukti ? public_path($fotoBukti) : null;
+                $fotoFile  = ($fotoPath && file_exists($fotoPath)) ? $fotoPath
+                           : (($fotoAlt && file_exists($fotoAlt)) ? $fotoAlt : null);
+
+                if ($fotoFile) {
+                    $ext = strtolower(pathinfo($fotoFile, PATHINFO_EXTENSION));
+                    $drawingFoto = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
+                    $drawingFoto->setName('foto_' . $dataRow);
+                    $drawingFoto->setPath($fotoFile);
+                    $drawingFoto->setHeight(46);
+                    $drawingFoto->setCoordinates('G' . $dataRow);
+                    $drawingFoto->setOffsetX(4);
+                    $drawingFoto->setOffsetY(3);
+                    $drawingFoto->setWorksheet($sheet);
+                } else {
+                    $sheet->setCellValue('G' . $dataRow, 'Tidak tersedia');
+                    $sheet->getStyle('G' . $dataRow)->applyFromArray([
+                        'font' => ['size' => 8, 'color' => ['argb' => 'FFAAAAAA']],
+                        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+                    ]);
+                }
+            } else {
+                $sheet->getRowDimension($dataRow)->setRowHeight(14);
+            }
+
             $dataRow++;
         }
 
-        // ── Lebar kolom ─────────────────────────────────────────
+        // Lebar kolom foto
+        if ($includeFoto) {
+            $sheet->getColumnDimension('G')->setWidth(16);
+        }
+
+        // ── Lebar kolom ────────────────────────────────────────────
         $sheet->getColumnDimension('A')->setWidth(6);
         $sheet->getColumnDimension('B')->setWidth(20);
         $sheet->getColumnDimension('C')->setWidth(14);
         $sheet->getColumnDimension('D')->setWidth(14);
-        $sheet->getColumnDimension('E')->setWidth(32);
+        $sheet->getColumnDimension('E')->setWidth(34);
         $sheet->getColumnDimension('F')->setWidth(12);
         $sheet->getColumnDimension('G')->setWidth(12);
         $sheet->getColumnDimension('H')->setWidth(10);
 
-        // ── Font default ─────────────────────────────────────────
         $spreadsheet->getDefaultStyle()->getFont()->setName('Calibri')->setSize(10);
 
-        // ── Stream response ──────────────────────────────────────
+        // ── Stream ──────────────────────────────────────────────────
         $writer = new Xlsx($spreadsheet);
         $safeFileName = str_replace('/', '-', $namaFile);
 

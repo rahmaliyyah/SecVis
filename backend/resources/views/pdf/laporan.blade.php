@@ -18,114 +18,55 @@
   .header {
     display: table;
     width: 100%;
-    padding-bottom: 8px;
+    padding-bottom: 10px;
     border-bottom: 2px solid #111;
     margin-bottom: 10px;
   }
-  .h-logo { display: table-cell; width: 44px; vertical-align: middle; }
-  .logo-box {
-    width: 36px; height: 36px;
-    background: #111;
-    border-radius: 5px;
-    text-align: center;
-    line-height: 36px;
-    color: #fff;
-    font-size: 14pt;
-    font-weight: bold;
-  }
-  .h-info { display: table-cell; vertical-align: middle; padding-left: 10px; }
-  .h-info h1 { font-size: 11pt; color: #111; font-weight: bold; }
-  .h-info p  { font-size: 8pt; color: #555; margin-top: 1px; }
-  .h-right {
-    display: table-cell;
-    vertical-align: middle;
-    text-align: right;
-  }
-  .h-right .doc-num  { font-size: 7.5pt; color: #666; }
-  .h-right .doc-date { font-size: 8pt; color: #333; margin-top: 2px; }
+  .h-logo-left  { display: table-cell; width: 80px; vertical-align: middle; }
+  .h-logo-right { display: table-cell; width: 100px; vertical-align: middle; text-align: right; }
+  .h-center     { display: table-cell; vertical-align: middle; text-align: center; padding: 0 12px; }
+
+  .logo-secvis { height: 38px; width: auto; }
+  .logo-epson  { height: 32px; width: auto; }
+
+  .h-center h1    { font-size: 11pt; color: #111; font-weight: bold; }
+  .h-center .sub  { font-size: 8pt; color: #555; margin-top: 2px; }
+  .h-center .meta { font-size: 7.5pt; color: #777; margin-top: 3px; }
 
   /* ─── JUDUL ─── */
   .report-title { text-align: center; margin: 10px 0 6px; }
-  .report-title h2 {
-    font-size: 12pt;
-    font-weight: bold;
-    color: #111;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-  }
+  .report-title h2 { font-size: 12pt; font-weight: bold; color: #111; text-transform: uppercase; letter-spacing: 0.8px; }
   .report-title .periode { font-size: 9pt; color: #444; margin-top: 2px; }
-  .title-divider {
-    border: none;
-    border-top: 1px solid #bbb;
-    margin: 8px 0 10px;
-  }
+  .title-divider { border: none; border-top: 1px solid #bbb; margin: 8px 0 10px; }
 
   /* ─── INFO BOX ─── */
-  .info-box {
-    display: table;
-    width: 100%;
-    border: 1px solid #bbb;
-    margin-bottom: 12px;
-  }
-  .info-row { display: table-row; }
+  .info-box { display: table; width: 100%; border: 1px solid #bbb; margin-bottom: 12px; }
+  .info-row  { display: table-row; }
   .info-cell {
-    display: table-cell;
-    padding: 8px 12px;
-    border-right: 1px solid #bbb;
-    width: 25%;
-    vertical-align: middle;
+    display: table-cell; padding: 8px 12px;
+    border-right: 1px solid #bbb; width: 25%; vertical-align: middle;
   }
   .info-cell:last-child { border-right: none; }
-  .info-cell .lbl {
-    font-size: 6.5pt;
-    color: #777;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 2px;
-    font-weight: bold;
-  }
-  .info-cell .val {
-    font-size: 14pt;
-    font-weight: bold;
-    color: #111;
-    line-height: 1.1;
-  }
+  .info-cell .lbl { font-size: 6.5pt; color: #777; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; font-weight: bold; }
+  .info-cell .val { font-size: 14pt; font-weight: bold; color: #111; line-height: 1.1; }
   .info-cell .sub { font-size: 7pt; color: #666; margin-top: 1px; }
 
   /* ─── SECTION TITLE ─── */
   .sec-title {
-    font-size: 8pt;
-    font-weight: bold;
-    color: #111;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    border-bottom: 1px solid #ccc;
-    padding-bottom: 3px;
-    margin: 10px 0 6px;
+    font-size: 8pt; font-weight: bold; color: #111;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    border-bottom: 1px solid #ccc; padding-bottom: 3px; margin: 10px 0 6px;
   }
 
   /* ─── DISTRIBUSI ─── */
   .dist-wrap { display: table; width: 100%; margin-bottom: 10px; }
   .dist-col  { display: table-cell; width: 50%; vertical-align: top; }
   .dist-col:first-child { padding-right: 7px; }
-  .dist-col:last-child  { padding-left: 7px; }
+  .dist-col:last-child  { padding-left:  7px; }
 
   .dist-tbl { width: 100%; border-collapse: collapse; font-size: 8pt; }
-  .dist-tbl th {
-    background: #eee;
-    color: #111;
-    padding: 5px 8px;
-    text-align: left;
-    font-weight: bold;
-    border: 1px solid #bbb;
-    font-size: 7.5pt;
-  }
-  .dist-tbl td {
-    padding: 5px 8px;
-    border: 1px solid #ccc;
-    color: #222;
-    vertical-align: middle;
-  }
+  .dist-tbl th { background: #eee; color: #111; padding: 5px 8px; text-align: left; font-weight: bold; border: 1px solid #bbb; font-size: 7.5pt; }
+  .dist-tbl td { padding: 5px 8px; border: 1px solid #ccc; color: #222; vertical-align: middle; }
   .dist-tbl tr:nth-child(even) td { background: #f7f7f7; }
 
   /* Progress bar */
@@ -135,43 +76,19 @@
   /* ─── TABEL RIWAYAT ─── */
   .vio-tbl { width: 100%; border-collapse: collapse; font-size: 7.5pt; }
   .vio-tbl thead tr { background: #333; color: #fff; }
-  .vio-tbl thead th {
-    padding: 6px 8px;
-    text-align: left;
-    font-weight: bold;
-    border: 1px solid #333;
-  }
+  .vio-tbl thead th { padding: 6px 8px; text-align: left; font-weight: bold; border: 1px solid #333; }
   .vio-tbl tbody tr:nth-child(even) { background: #f5f5f5; }
   .vio-tbl tbody tr:nth-child(odd)  { background: #fff; }
-  .vio-tbl tbody td {
-    padding: 4.5px 8px;
-    border-bottom: 1px solid #ddd;
-    color: #222;
-    vertical-align: middle;
-    border-left: 1px solid #ddd;
-    border-right: 1px solid #ddd;
-  }
+  .vio-tbl tbody td { padding: 4.5px 8px; border-bottom: 1px solid #ddd; color: #222; vertical-align: middle; border-left: 1px solid #ddd; border-right: 1px solid #ddd; }
 
   /* ─── FOOTER ─── */
   .footer { margin-top: 16px; border-top: 1px solid #bbb; padding-top: 10px; }
   .sig-grid { display: table; width: 100%; }
   .sig-cell { display: table-cell; width: 33.33%; text-align: center; padding: 0 12px; }
   .sig-lbl  { font-size: 8pt; color: #555; margin-bottom: 36px; }
-  .sig-line {
-    border-top: 1px solid #333;
-    margin: 0 16px;
-    padding-top: 3px;
-    font-size: 8pt;
-    font-weight: bold;
-    color: #111;
-  }
+  .sig-line { border-top: 1px solid #333; margin: 0 16px; padding-top: 3px; font-size: 8pt; font-weight: bold; color: #111; }
   .sig-role { font-size: 7pt; color: #777; margin-top: 2px; }
-  .page-note {
-    margin-top: 12px;
-    text-align: center;
-    font-size: 7pt;
-    color: #aaa;
-  }
+  .page-note { margin-top: 12px; text-align: center; font-size: 7pt; color: #aaa; }
 
   .no-data { text-align: center; padding: 16px; color: #aaa; font-style: italic; font-size: 8pt; }
   .mono    { font-family: 'Courier New', Courier, monospace; }
@@ -183,16 +100,29 @@
 
 {{-- HEADER --}}
 <div class="header">
-  <div class="h-logo">
-    <div class="logo-box">S</div>
+  {{-- Logo SecVis (kiri) --}}
+  <div class="h-logo-left">
+    @if(file_exists(public_path('images/logo-secvis.png')))
+      <img src="data:image/png;base64,{{ base64_encode(file_get_contents(public_path('images/logo-secvis.png'))) }}" class="logo-secvis" alt="SecVis">
+    @else
+      <span style="font-size:14pt;font-weight:bold;color:#003399;font-family:Arial">SecVis</span>
+    @endif
   </div>
-  <div class="h-info">
-    <h1>SecVis: Sistem Monitoring K3</h1>
-    <p>PT Epson Indonesia · Area Maintenance</p>
+
+  {{-- Judul tengah --}}
+  <div class="h-center">
+    <h1>Sistem Monitoring K3 — SecVis</h1>
+    <div class="sub">PT Indonesia Epson Industry</div>
+    <div class="meta">No. Dok: SV-LAP-{{ str_pad($nomor_laporan, 4, '0', STR_PAD_LEFT) }} &nbsp;|&nbsp; Dicetak: {{ $tanggal_cetak }}</div>
   </div>
-  <div class="h-right">
-    <div class="doc-num">No. Dok: SV-LAP-{{ str_pad($nomor_laporan, 4, '0', STR_PAD_LEFT) }}</div>
-    <div class="doc-date">Dicetak: {{ $tanggal_cetak }}</div>
+
+  {{-- Logo Epson (kanan) --}}
+  <div class="h-logo-right">
+    @if(file_exists(public_path('images/logo-epson.png')))
+      <img src="data:image/png;base64,{{ base64_encode(file_get_contents(public_path('images/logo-epson.png'))) }}" class="logo-epson" alt="Epson">
+    @else
+      <span style="font-size:12pt;font-weight:bold;color:#003399;font-family:Arial">EPSON</span>
+    @endif
   </div>
 </div>
 
@@ -302,28 +232,31 @@
 {{-- RIWAYAT --}}
 <div class="sec-title">Riwayat Pelanggaran</div>
 @if(count($violations) > 0)
+  @php
+    $labelMap = [
+      'no-helmet'  => 'Tidak Memakai Helm',
+      'no-vest'    => 'Tidak Memakai Rompi',
+      'no-boots'   => 'Tidak Memakai Sepatu Safety',
+      'no-gloves'  => 'Tidak Memakai Sarung Tangan',
+      'no-glasses' => 'Tidak Memakai Kacamata',
+    ];
+  @endphp
   <table class="vio-tbl">
     <thead>
       <tr>
-        <th style="width:3%; text-align:center">No</th>
-        <th style="width:14%">Waktu Deteksi</th>
-        <th style="width:10%">Shift</th>
-        <th style="width:9%">Kamera</th>
-        <th style="width:35%">Jenis Pelanggaran</th>
-        <th style="width:9%; text-align:center">Confidence</th>
+        <th style="width:3%;text-align:center">No</th>
+        <th style="width:{{ $include_foto ? '13%' : '15%' }}">Waktu Deteksi</th>
+        <th style="width:9%">Shift</th>
+        <th style="width:8%">Kamera</th>
+        <th style="width:{{ $include_foto ? '30%' : '38%' }}">Jenis Pelanggaran</th>
+        <th style="width:8%;text-align:center">Confidence</th>
+        @if($include_foto)
+          <th style="width:14%;text-align:center">Foto Bukti</th>
+        @endif
       </tr>
     </thead>
     <tbody>
       @foreach($violations as $i => $v)
-        @php
-          $labelMap = [
-            'no-helmet'  => 'Tidak Memakai Helm',
-            'no-vest'    => 'Tidak Memakai Rompi',
-            'no-boots'   => 'Tidak Memakai Sepatu Safety',
-            'no-gloves'  => 'Tidak Memakai Sarung Tangan',
-            'no-glasses' => 'Tidak Memakai Kacamata',
-          ];
-        @endphp
         <tr>
           <td class="center" style="color:#999">{{ $i + 1 }}</td>
           <td class="mono" style="font-size:7pt">{{ $v['timestamp'] }}</td>
@@ -331,6 +264,21 @@
           <td class="mono" style="font-size:7pt">{{ $v['kamera'] }}</td>
           <td>{{ $labelMap[$v['jenis']] ?? $v['jenis'] }}</td>
           <td class="center mono" style="font-size:7pt">{{ $v['confidence'] }}%</td>
+          @if($include_foto)
+            <td class="center" style="padding:4px">
+              @php
+                $fotoPath = $v['foto_bukti'] ? storage_path('app/public/' . $v['foto_bukti']) : null;
+                $fotoAlt  = $v['foto_bukti'] ? public_path($v['foto_bukti']) : null;
+                $fotoFile = ($fotoPath && file_exists($fotoPath)) ? $fotoPath : (($fotoAlt && file_exists($fotoAlt)) ? $fotoAlt : null);
+              @endphp
+              @if($fotoFile)
+                <img src="data:image/jpeg;base64,{{ base64_encode(file_get_contents($fotoFile)) }}"
+                     style="height:52px;width:auto;border-radius:3px;object-fit:cover;" alt="foto">
+              @else
+                <span style="font-size:7pt;color:#bbb">Tidak tersedia</span>
+              @endif
+            </td>
+          @endif
         </tr>
       @endforeach
     </tbody>
@@ -359,7 +307,7 @@
     </div>
   </div>
   <div class="page-note">
-    Dokumen ini digenerate otomatis oleh sistem SecVis &middot; PT Epson Indonesia &middot; {{ $tanggal_cetak }}
+    Dokumen ini digenerate otomatis oleh sistem SecVis &middot; PT Indonesia Epson Industry &middot; {{ $tanggal_cetak }}
   </div>
 </div>
 

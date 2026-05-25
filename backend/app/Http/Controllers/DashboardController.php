@@ -4,137 +4,134 @@ namespace App\Http\Controllers;
 
 use App\Models\Violation;
 use App\Models\Shift;
-use Illuminate\Http\Request;
+use App\Models\Camera;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    // GET /api/dashboard/summary
+    // ─── SUMMARY (global, no filter) ─────────────────────────────
     public function summary(Request $request)
     {
-        $periode = $request->periode ?? 'harian';
-
-        $totalHariIni = Violation::whereDate('timestamp_deteksi', today())->count();
-
-        $totalMingguIni = Violation::whereBetween('timestamp_deteksi', [
-            now()->startOfWeek(),
-            now()->endOfWeek(),
+        $hariIni  = Violation::whereDate('timestamp_deteksi', today())->count();
+        $mingguIni = Violation::whereBetween('timestamp_deteksi', [
+            now()->startOfWeek(), now()->endOfWeek()
         ])->count();
+        $bulanIni = Violation::whereYear('timestamp_deteksi', now()->year)
+            ->whereMonth('timestamp_deteksi', now()->month)->count();
 
-        $totalBulanIni = Violation::whereYear('timestamp_deteksi', now()->year)
+        $shiftTerbanyak = Violation::whereYear('timestamp_deteksi', now()->year)
             ->whereMonth('timestamp_deteksi', now()->month)
-            ->count();
-
-        $shiftTerbanyak = Violation::selectRaw('shift_id, COUNT(*) as total')
+            ->selectRaw('shift_id, count(*) as total')
             ->groupBy('shift_id')
             ->orderByDesc('total')
             ->with('shift')
             ->first();
 
         return response()->json([
-            'success' => true,
-            'data'    => [
-                'total_hari_ini'   => $totalHariIni,
-                'total_minggu_ini' => $totalMingguIni,
-                'total_bulan_ini'  => $totalBulanIni,
+            'status' => 'success',
+            'data'   => [
+                'total_hari_ini'   => $hariIni,
+                'total_minggu_ini' => $mingguIni,
+                'total_bulan_ini'  => $bulanIni,
                 'shift_terbanyak'  => $shiftTerbanyak ? [
-                    'shift_id'          => $shiftTerbanyak->shift_id,
-                    'nama_shift'        => $shiftTerbanyak->shift->nama_shift,
-                    'total_pelanggaran' => $shiftTerbanyak->total,
+                    'nama_shift'         => $shiftTerbanyak->shift->nama_shift ?? '-',
+                    'total_pelanggaran'  => $shiftTerbanyak->total,
                 ] : null,
             ],
         ]);
     }
 
-    // GET /api/dashboard/trend
+    // ─── TREND (date range + optional shift/camera filter) ────────
     public function trend(Request $request)
     {
         $request->validate([
-            'tanggal_mulai'   => 'required|date',
-            'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
+            'tanggal_mulai' => 'required|date',
+            'tanggal_selesai' => 'required|date',
+            'shift_id'      => 'nullable|integer',
+            'camera_id'     => 'nullable|integer',
         ]);
 
-        $data = Violation::selectRaw('DATE(timestamp_deteksi) as tanggal, COUNT(*) as total')
-            ->whereDate('timestamp_deteksi', '>=', $request->tanggal_mulai)
-            ->whereDate('timestamp_deteksi', '<=', $request->tanggal_selesai)
+        $query = Violation::whereBetween('timestamp_deteksi', [
+            Carbon::parse($request->tanggal_mulai)->startOfDay(),
+            Carbon::parse($request->tanggal_selesai)->endOfDay(),
+        ]);
+
+        if ($request->shift_id)  $query->where('shift_id',  $request->shift_id);
+        if ($request->camera_id) $query->where('camera_id', $request->camera_id);
+
+        $data = $query->selectRaw('DATE(timestamp_deteksi) as tanggal, COUNT(*) as total')
             ->groupBy('tanggal')
             ->orderBy('tanggal')
-            ->get();
+            ->get()
+            ->map(fn($r) => [
+                'tanggal' => Carbon::parse($r->tanggal)->format('d/m'),
+                'total'   => $r->total,
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'data'    => $data->map(fn($d) => [
-                'tanggal' => $d->tanggal,
-                'total'   => $d->total,
-            ]),
-        ]);
+        return response()->json(['status' => 'success', 'data' => $data]);
     }
 
-    // GET /api/dashboard/by-shift
+    // ─── BY SHIFT (periode + optional camera filter) ──────────────
     public function byShift(Request $request)
     {
-        $periode = $request->periode ?? 'bulanan';
+        $periode   = $request->get('periode', 'bulanan');
+        $camera_id = $request->camera_id;
 
-        $query = Violation::selectRaw('shift_id, COUNT(*) as total_pelanggaran')
-            ->groupBy('shift_id')
-            ->with('shift');
+        $query = Violation::query();
+        if ($camera_id) $query->where('camera_id', $camera_id);
 
         if ($periode === 'harian') {
-            $query->whereDate('timestamp_deteksi', today());
-        } elseif ($periode === 'mingguan') {
-            $query->whereBetween('timestamp_deteksi', [
-                now()->startOfWeek(),
-                now()->endOfWeek(),
-            ]);
+            $tanggal = $request->tanggal ?? today()->toDateString();
+            $query->whereDate('timestamp_deteksi', $tanggal);
         } else {
             $query->whereYear('timestamp_deteksi', now()->year)
                   ->whereMonth('timestamp_deteksi', now()->month);
         }
 
-        $data = $query->get();
+        $violations = $query->get();
+        $shifts     = Shift::all();
 
-        return response()->json([
-            'success' => true,
-            'data'    => $data->map(fn($d) => [
-                'shift_id'          => $d->shift_id,
-                'nama_shift'        => $d->shift->nama_shift,
-                'total_pelanggaran' => $d->total_pelanggaran,
-            ]),
-        ]);
+        $data = $shifts->map(function ($shift) use ($violations) {
+            return [
+                'nama_shift'         => $shift->nama_shift,
+                'jam_mulai'          => $shift->jam_mulai,
+                'jam_selesai'        => $shift->jam_selesai,
+                'total_pelanggaran'  => $violations->where('shift_id', $shift->id)->count(),
+            ];
+        })->sortByDesc('total_pelanggaran')->values();
+
+        return response()->json(['status' => 'success', 'data' => $data]);
     }
 
-    // GET /api/dashboard/by-type
+    // ─── BY TYPE (periode + optional shift/camera filter) ─────────
     public function byType(Request $request)
     {
-        $periode = $request->periode ?? 'bulanan';
+        $periode   = $request->get('periode', 'bulanan');
+        $shift_id  = $request->shift_id;
+        $camera_id = $request->camera_id;
 
-        $query = Violation::selectRaw('jenis_pelanggaran, COUNT(*) as total')
-            ->groupBy('jenis_pelanggaran');
+        $query = Violation::query();
+        if ($shift_id)  $query->where('shift_id',  $shift_id);
+        if ($camera_id) $query->where('camera_id', $camera_id);
 
         if ($periode === 'harian') {
-            $query->whereDate('timestamp_deteksi', today());
-        } elseif ($periode === 'mingguan') {
-            $query->whereBetween('timestamp_deteksi', [
-                now()->startOfWeek(),
-                now()->endOfWeek(),
-            ]);
+            $tanggal = $request->tanggal ?? today()->toDateString();
+            $query->whereDate('timestamp_deteksi', $tanggal);
         } else {
             $query->whereYear('timestamp_deteksi', now()->year)
                   ->whereMonth('timestamp_deteksi', now()->month);
         }
 
-        $data = $query->get();
-        $grandTotal = $data->sum('total');
+        $data = $query->selectRaw('jenis_pelanggaran, COUNT(*) as total')
+            ->groupBy('jenis_pelanggaran')
+            ->orderByDesc('total')
+            ->get()
+            ->map(fn($r) => [
+                'jenis_pelanggaran' => $r->jenis_pelanggaran,
+                'total'             => $r->total,
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'data'    => $data->map(fn($d) => [
-                'jenis_pelanggaran' => $d->jenis_pelanggaran,
-                'total'             => $d->total,
-                'persentase'        => $grandTotal > 0
-                    ? round(($d->total / $grandTotal) * 100, 2)
-                    : 0,
-            ]),
-        ]);
+        return response()->json(['status' => 'success', 'data' => $data]);
     }
 }
