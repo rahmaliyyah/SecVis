@@ -13,16 +13,20 @@ function buildFileName(tipe, { tanggal, bulan, tahun }, ext) {
 }
 
 export default function ExportLaporan() {
-  const [show,    setShow]    = useState(false)
-  const [format,  setFormat]  = useState('pdf')
-  const [tipe,    setTipe]    = useState('harian')
-  const [tanggal, setTanggal] = useState('')
-  const [bulan,   setBulan]   = useState('')
-  const [tahun,   setTahun]   = useState(new Date().getFullYear().toString())
-  const [loading, setLoading] = useState(false)
-  const [error,   setError]   = useState('')
+  const [show,       setShow]       = useState(false)
+  const [format,     setFormat]     = useState('pdf')
+  const [tipe,       setTipe]       = useState('harian')
+  const [tanggal,    setTanggal]    = useState('')
+  const [bulan,      setBulan]      = useState('')
+  const [tahun,      setTahun]      = useState(new Date().getFullYear().toString())
+  const [withFoto,   setWithFoto]   = useState(false)
+  const [loading,    setLoading]    = useState(false)
+  const [error,      setError]      = useState('')
 
   const isDisabled = loading || (tipe==='harian'&&!tanggal) || (tipe==='bulanan'&&(!bulan||!tahun))
+
+  // Foto hanya untuk periode harian (data tidak terlalu banyak)
+  const showFotoToggle = tipe === 'harian'
 
   const handleExport = async () => {
     setLoading(true); setError('')
@@ -31,15 +35,18 @@ export default function ExportLaporan() {
       if (tipe==='harian') params.tanggal = tanggal
       if (tipe==='bulanan') { params.bulan=bulan; params.tahun=tahun }
       if (tipe==='tahunan') params.tahun = tahun
+      if (showFotoToggle && withFoto) params.include_foto = 1
+
       const endpoint = format==='excel' ? '/laporan/export-excel' : '/laporan/export'
       const ext      = format==='excel' ? 'xlsx' : 'pdf'
       const fileName = buildFileName(tipe, {tanggal,bulan,tahun}, ext)
+
       const res = await api.get(endpoint, { params, responseType:'blob' })
       const url = window.URL.createObjectURL(new Blob([res.data]))
       const a = document.createElement('a'); a.href=url; a.setAttribute('download', fileName)
       document.body.appendChild(a); a.click(); a.remove(); window.URL.revokeObjectURL(url)
       setShow(false)
-    } catch(err) { setError('Gagal generate laporan.'); console.error(err) }
+    } catch(err) { setError('Gagal generate laporan. Pastikan parameter sudah benar.'); console.error(err) }
     finally { setLoading(false) }
   }
 
@@ -66,6 +73,7 @@ export default function ExportLaporan() {
             </div>
 
             <div style={{ display:'flex', flexDirection:'column', gap:'14px' }}>
+              {/* Format */}
               <div>
                 <label style={{ display:'block', fontSize:'11px', fontWeight:'600', letterSpacing:'0.07em', textTransform:'uppercase', color:C.textMuted, marginBottom:'6px' }}>Format</label>
                 <div style={{ display:'flex', gap:'8px' }}>
@@ -75,15 +83,17 @@ export default function ExportLaporan() {
                 </div>
               </div>
 
+              {/* Periode */}
               <div>
                 <label style={{ display:'block', fontSize:'11px', fontWeight:'600', letterSpacing:'0.07em', textTransform:'uppercase', color:C.textMuted, marginBottom:'6px' }}>Periode</label>
                 <div style={{ display:'flex', gap:'8px' }}>
                   {['harian','bulanan','tahunan'].map(t => (
-                    <button key={t} onClick={() => setTipe(t)} style={tipe===t?chipActive:chipIdle}>{t}</button>
+                    <button key={t} onClick={() => { setTipe(t); if(t!=='harian') setWithFoto(false) }} style={tipe===t?chipActive:chipIdle}>{t}</button>
                   ))}
                 </div>
               </div>
 
+              {/* Input tanggal */}
               {tipe==='harian' && (
                 <div>
                   <label style={{ display:'block', fontSize:'11px', fontWeight:'600', letterSpacing:'0.07em', textTransform:'uppercase', color:C.textMuted, marginBottom:'6px' }}>Tanggal</label>
@@ -112,6 +122,29 @@ export default function ExportLaporan() {
                 </div>
               )}
 
+              {/* Toggle foto bukti — hanya PDF harian */}
+              {showFotoToggle && (
+                <div style={{ background: withFoto ? C.primaryLight : '#f8f9fb', border: `1px solid ${withFoto ? C.primary+'40' : C.border}`, borderRadius:'10px', padding:'12px 14px', transition:'all 0.15s' }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                    <div>
+                      <div style={{ fontSize:'13px', fontWeight:'600', color:C.textMain }}>Sertakan Foto Bukti</div>
+                      <div style={{ fontSize:'11px', color:C.textSub, marginTop:'2px' }}>Tampilkan foto pelanggaran di laporan PDF</div>
+                    </div>
+                    {/* Toggle switch */}
+                    <div onClick={() => setWithFoto(!withFoto)} style={{ width:'40px', height:'22px', borderRadius:'11px', background: withFoto ? C.primary : '#d1d5db', cursor:'pointer', position:'relative', transition:'background 0.2s', flexShrink:0 }}>
+                      <div style={{ width:'18px', height:'18px', borderRadius:'50%', background:'#fff', position:'absolute', top:'2px', left: withFoto ? '20px' : '2px', transition:'left 0.2s', boxShadow:'0 1px 3px rgba(0,0,0,0.2)' }} />
+                    </div>
+                  </div>
+                  {withFoto && (
+                    <div style={{ marginTop:'8px', fontSize:'11px', color:'#d97706', display:'flex', alignItems:'center', gap:'5px' }}>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                      Ukuran file PDF akan lebih besar
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Preview nama file */}
               {!isDisabled && (
                 <div style={{ background:C.primaryLight, border:`1px solid ${C.border}`, borderRadius:'7px', padding:'8px 12px', fontSize:'11px', color:C.textSub, wordBreak:'break-all' }}>
                   <span style={{ color:C.textMuted, fontWeight:'600' }}>File: </span>
@@ -122,7 +155,7 @@ export default function ExportLaporan() {
               {error && <div style={{ background:'#fff5f5', border:'1px solid #fecaca', borderRadius:'7px', padding:'9px 12px', fontSize:'12px', color:'#dc2626' }}>{error}</div>}
 
               <button onClick={handleExport} disabled={isDisabled} style={{ background:isDisabled?C.primaryLight:C.primary, color:isDisabled?C.textMuted:'white', border:'none', borderRadius:'8px', padding:'11px', fontSize:'13px', fontWeight:'600', cursor:isDisabled?'not-allowed':'pointer', fontFamily:'inherit', marginTop:'2px', display:'flex', alignItems:'center', justifyContent:'center', gap:'8px', transition:'opacity 0.15s' }}>
-                {loading ? 'Generating...' : `${format==='excel'?'📊':'📄'} Download ${format==='excel'?'Excel':'PDF'}`}
+                {loading ? 'Generating...' : `${format==='excel'?'📊':'📄'} Download ${format==='excel'?'Excel':'PDF'}${withFoto&&showFotoToggle?' + Foto':''}`}
               </button>
             </div>
           </div>

@@ -105,26 +105,15 @@ export default function Sidebar() {
       `}</style>
 
       {/* Brand */}
-      <div style={{ padding: '20px 20px 16px', borderBottom: `1px solid ${C.border}` }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{
-            width: '32px', height: '32px',
-            background: C.primary, borderRadius: '8px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
-          </div>
-          <div>
-            <div style={{ fontSize: '15px', fontWeight: '700', color: C.primary, letterSpacing: '-0.01em', fontFamily: "'DM Mono', monospace" }}>
-              SecVis
-            </div>
-            <div style={{ fontSize: '10px', color: C.textMuted, marginTop: '1px' }}>
-              PT Epson Indonesia
-            </div>
-          </div>
+      <div style={{ padding: '14px 20px', borderBottom: `1px solid ${C.border}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <img
+            src="/images/logo-secvis.png"
+            alt="SecVis"
+            style={{ height: '50px', width: 'auto', objectFit: 'contain' }}
+            onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='block' }}
+          />
+        
         </div>
       </div>
 
@@ -170,8 +159,23 @@ export default function Sidebar() {
 
       {/* Logout */}
       <div style={{ padding: '12px', borderTop: `1px solid ${C.border}` }}>
-        <button className="logout-btn" onClick={handleLogout}>
-          <span className="lo-icon">{icons.logout}</span>
+        <button onClick={handleLogout} style={{
+          display: 'flex', alignItems: 'center', gap: '8px',
+          width: '100%', padding: '9px 12px',
+          background: '#fff0f0', border: '1px solid #fecaca',
+          borderRadius: '8px', cursor: 'pointer',
+          fontSize: '13px', fontWeight: '600',
+          color: '#dc2626', fontFamily: 'inherit',
+          transition: 'all 0.15s',
+        }}
+          onMouseEnter={e => { e.currentTarget.style.background='#fee2e2'; e.currentTarget.style.borderColor='#fca5a5' }}
+          onMouseLeave={e => { e.currentTarget.style.background='#fff0f0'; e.currentTarget.style.borderColor='#fecaca' }}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
           Logout
         </button>
       </div>

@@ -58,21 +58,36 @@ export default function Login() {
 
       <div style={{ width: '100%', maxWidth: '380px', padding: '0 20px' }}>
         {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{
-            width: '52px', height: '52px', background: C.primary, borderRadius: '14px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px',
-          }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
+        <div style={{ marginBottom: '28px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+          {/* Logo SecVis */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+            <img
+              src="/images/logo-secvis.png"
+              alt="SecVis"
+              style={{ height: '60px', width: 'auto', objectFit: 'contain', display: 'block' }}
+              onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='block' }}
+            />
+            <div style={{ display: 'none', fontSize: '24px', fontWeight: '700', color: C.primary, fontFamily: "'DM Mono', monospace" }}>SecVis</div>
+        
           </div>
-          <div style={{ fontSize: '22px', fontWeight: '700', color: C.primary, fontFamily: "'DM Mono', monospace", letterSpacing: '-0.01em' }}>
-            SecVis
+
+          {/* Divider */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+            <div style={{ flex: 1, height: '1px', background: C.border }} />
+            <span style={{ fontSize: '10px', color: C.textMuted, whiteSpace: 'nowrap' }}>powered by</span>
+            <div style={{ flex: 1, height: '1px', background: C.border }} />
           </div>
-          <div style={{ fontSize: '12px', color: C.textSub, marginTop: '4px' }}>
-            Sistem Monitoring K3 · PT Epson Indonesia
+
+          {/* Logo Epson */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+            <img
+              src="/images/logo-epson.png"
+              alt="PT Indonesia Epson Industry"
+              style={{ height: '45px', width: 'auto', objectFit: 'contain', display: 'block' }}
+              onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='block' }}
+            />
+            <div style={{ display: 'none', fontSize: '13px', fontWeight: '700', color: C.primary }}>EPSON</div>
+          
           </div>
         </div>
 
