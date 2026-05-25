@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import api from '../api/axios'
+import { getUser } from '../utils/auth'
 
 const C = { primary:'#003399', primaryLight:'#e8eef8', border:'#e4e8f0', textMain:'#1a2340', textSub:'#7a85a0', textMuted:'#b0bac8' }
 const bulanList = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
@@ -13,6 +14,9 @@ function buildFileName(tipe, { tanggal, bulan, tahun }, ext) {
 }
 
 export default function ExportLaporan() {
+  const user     = getUser()
+  const canExcel = user?.role === 'admin' || user?.role === 'manager'
+
   const [show,       setShow]       = useState(false)
   const [format,     setFormat]     = useState('pdf')
   const [tipe,       setTipe]       = useState('harian')
@@ -25,8 +29,8 @@ export default function ExportLaporan() {
 
   const isDisabled = loading || (tipe==='harian'&&!tanggal) || (tipe==='bulanan'&&(!bulan||!tahun))
 
-  // Foto hanya untuk periode harian (data tidak terlalu banyak)
-  const showFotoToggle = tipe === 'harian'
+  // Foto tersedia untuk semua periode
+  const showFotoToggle = true
 
   const handleExport = async () => {
     setLoading(true); setError('')
@@ -77,9 +81,13 @@ export default function ExportLaporan() {
               <div>
                 <label style={{ display:'block', fontSize:'11px', fontWeight:'600', letterSpacing:'0.07em', textTransform:'uppercase', color:C.textMuted, marginBottom:'6px' }}>Format</label>
                 <div style={{ display:'flex', gap:'8px' }}>
-                  {[{key:'pdf',icon:'📄',label:'PDF'},{key:'excel',icon:'📊',label:'Excel (.xlsx)'}].map(f => (
-                    <button key={f.key} onClick={() => setFormat(f.key)} style={format===f.key?chipActive:chipIdle}>{f.icon} {f.label}</button>
-                  ))}
+                  {[{key:'pdf',icon:'📄',label:'PDF'},{key:'excel',icon:'📊',label:'Excel (.xlsx)'}]
+                    .filter(f => f.key === 'pdf' || canExcel)
+                    .map(f => (
+                      <button key={f.key} onClick={() => setFormat(f.key)} style={format===f.key?chipActive:chipIdle}>
+                        {f.icon} {f.label}
+                      </button>
+                    ))}
                 </div>
               </div>
 
@@ -88,7 +96,7 @@ export default function ExportLaporan() {
                 <label style={{ display:'block', fontSize:'11px', fontWeight:'600', letterSpacing:'0.07em', textTransform:'uppercase', color:C.textMuted, marginBottom:'6px' }}>Periode</label>
                 <div style={{ display:'flex', gap:'8px' }}>
                   {['harian','bulanan','tahunan'].map(t => (
-                    <button key={t} onClick={() => { setTipe(t); if(t!=='harian') setWithFoto(false) }} style={tipe===t?chipActive:chipIdle}>{t}</button>
+                    <button key={t} onClick={() => setTipe(t)} style={tipe===t?chipActive:chipIdle}>{t}</button>
                   ))}
                 </div>
               </div>

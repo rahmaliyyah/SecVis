@@ -167,6 +167,15 @@ class LaporanController extends Controller
 
     public function exportExcel(Request $request)
     {
+        // Hanya admin dan manager yang boleh export Excel
+        $user = $request->user();
+        if (!in_array($user->role, ['admin', 'manager'])) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Akses ditolak. Fitur ini hanya untuk Manager dan Admin.',
+            ], 403);
+        }
+
         $request->validate([
             'tipe'    => 'required|in:harian,bulanan,tahunan',
             'tahun'   => 'required_if:tipe,tahunan,bulanan|nullable|integer',
