@@ -110,10 +110,16 @@ export default function Sidebar() {
           <img
             src="/images/logo-secvis.png"
             alt="SecVis"
-            style={{ height: '50px', width: 'auto', objectFit: 'contain' }}
+            style={{ height: '48px', width: 'auto', objectFit: 'contain' }}
             onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='block' }}
           />
-        
+          <span style={{ display:'none', fontSize:'15px', fontWeight:'700', color:C.primary, fontFamily:"'DM Mono',monospace" }}>SecVis</span>
+          <img
+            src="/images/logo-epson.png"
+            alt="Epson"
+            style={{ height: '30px', width: 'auto', objectFit: 'contain', opacity: 0.7 }}
+            onError={e => { e.target.style.display='none' }}
+          />
         </div>
       </div>
 
@@ -158,7 +164,7 @@ export default function Sidebar() {
       </nav>
 
       {/* Logout */}
-      <div style={{ padding: '12px', borderTop: `1px solid ${C.border}` }}>
+      <div style={{ padding: '12px', borderTop: `1px solid ${C.border}`, background: '#fff', boxShadow: '0 -2px 8px rgba(0,0,0,0.06)', position: 'sticky', bottom: 0 }}>
         <button onClick={handleLogout} style={{
           display: 'flex', alignItems: 'center', gap: '8px',
           width: '100%', padding: '9px 12px',

@@ -81,11 +81,11 @@ export default function ExportLaporan() {
               <div>
                 <label style={{ display:'block', fontSize:'11px', fontWeight:'600', letterSpacing:'0.07em', textTransform:'uppercase', color:C.textMuted, marginBottom:'6px' }}>Format</label>
                 <div style={{ display:'flex', gap:'8px' }}>
-                  {[{key:'pdf',icon:'📄',label:'PDF'},{key:'excel',icon:'📊',label:'Excel (.xlsx)'}]
+                  {[{key:'pdf',label:'PDF'},{key:'excel',label:'Excel (.xlsx)'}]
                     .filter(f => f.key === 'pdf' || canExcel)
                     .map(f => (
                       <button key={f.key} onClick={() => setFormat(f.key)} style={format===f.key?chipActive:chipIdle}>
-                        {f.icon} {f.label}
+                        {f.label}
                       </button>
                     ))}
                 </div>
@@ -163,7 +163,7 @@ export default function ExportLaporan() {
               {error && <div style={{ background:'#fff5f5', border:'1px solid #fecaca', borderRadius:'7px', padding:'9px 12px', fontSize:'12px', color:'#dc2626' }}>{error}</div>}
 
               <button onClick={handleExport} disabled={isDisabled} style={{ background:isDisabled?C.primaryLight:C.primary, color:isDisabled?C.textMuted:'white', border:'none', borderRadius:'8px', padding:'11px', fontSize:'13px', fontWeight:'600', cursor:isDisabled?'not-allowed':'pointer', fontFamily:'inherit', marginTop:'2px', display:'flex', alignItems:'center', justifyContent:'center', gap:'8px', transition:'opacity 0.15s' }}>
-                {loading ? 'Generating...' : `${format==='excel'?'📊':'📄'} Download ${format==='excel'?'Excel':'PDF'}${withFoto&&showFotoToggle?' + Foto':''}`}
+                {loading ? 'Exporting...' : `Download ${format==='excel'?'Excel':'PDF'}${withFoto&&showFotoToggle?' + Foto':''}`}
               </button>
             </div>
           </div>

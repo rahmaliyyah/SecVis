@@ -61,7 +61,22 @@ const BarLabel = ({ x, y, width, value }) => {
 export default function Dashboard() {
   const navigate   = useNavigate()
   const admin      = isAdmin()
-  const intervalId = useRef(null)
+  const intervalId  = useRef(null)
+  const STREAM_URL   = 'http://localhost:5001/stream'
+  const [showCamera, setShowCamera] = useState(false)
+  const [camOnline,  setCamOnline]  = useState(false)
+
+  // Cek apakah stream online
+  useEffect(() => {
+    const check = () => {
+      fetch('http://localhost:5001/status')
+        .then(() => setCamOnline(true))
+        .catch(() => setCamOnline(false))
+    }
+    check()
+    const i = setInterval(check, 8000)
+    return () => clearInterval(i)
+  }, [])
 
   // mode: 'live' | 'periode'
   const [mode,         setMode]         = useState('live')
@@ -169,10 +184,18 @@ export default function Dashboard() {
     fetchSummary()
     fetchCharts({ mode })
     if (mode === 'live') {
-      intervalId.current = setInterval(() => {
-        fetchSummary()
-        fetchCharts({ mode: 'live' })
-      }, 10000)
+     intervalId.current = setInterval(() => {
+    fetchSummary()
+}, 1000)
+
+const chartInterval = setInterval(() => {
+    fetchCharts({ mode: 'live' })
+}, 1000)
+
+return () => {
+    clearInterval(intervalId.current)
+    clearInterval(chartInterval)
+}
     }
     return () => clearInterval(intervalId.current)
   }, [mode]) // eslint-disable-line
@@ -222,8 +245,8 @@ export default function Dashboard() {
       {/* ── Header ── */}
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'16px' }}>
         <div>
-          <h2 style={{ fontSize:'18px', fontWeight:'700', color:C.textMain, margin:0 }}>Dashboard Monitoring</h2>
-          <p style={{ fontSize:'12px', color:C.textSub, marginTop:'3px' }}>Area Maintenance · PT Epson Indonesia</p>
+          <h2 style={{ fontSize:'18px', fontWeight:'700', color:C.textMain, margin:0 }}>Dashboard Monitoring Kelengkapan APD</h2>
+          <p style={{ fontSize:'12px', color:C.textSub, marginTop:'3px' }}> PT Epson Indonesia</p>
         </div>
         <div style={{ display:'flex', gap:'8px' }}>
           {admin && <>
@@ -242,7 +265,7 @@ export default function Dashboard() {
           <div style={{ display:'flex', gap:'3px', background:'#f4f6fb', borderRadius:'8px', padding:'3px', flexShrink:0 }}>
             {[
               { key:'live',    label:'● Live' },
-              { key:'periode', label:'📅 Periode' },
+              { key:'periode', label:'Periode' },
             ].map(m => (
               <button key={m.key} onClick={() => setMode(m.key)} style={{ padding:'6px 14px', borderRadius:'6px', border:'none', fontSize:'12px', fontWeight: mode===m.key?'600':'400', cursor:'pointer', fontFamily:'inherit', background: mode===m.key?'#fff':'transparent', color: mode===m.key?C.primary:C.textSub, boxShadow: mode===m.key?'0 1px 3px rgba(0,0,0,0.1)':'none', transition:'all 0.15s' }}>
                 {m.key==='live' && mode==='live'
@@ -296,7 +319,7 @@ export default function Dashboard() {
       {/* ── KPI Cards ── */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'14px', marginBottom:'20px', opacity:chartLoading?0.6:1, transition:'opacity 0.2s' }}>
         {[
-          { label: mode==='live'?'Live — Hari Ini': tipe==='harian'?'Tanggal Dipilih':tipe==='bulanan'?'Bulan Dipilih':'Tahun Dipilih', value:totalPeriode, color:C.primary, highlight:true },
+          { label: mode==='live'?'Live Hari Ini': tipe==='harian'?'Tanggal Dipilih':tipe==='bulanan'?'Bulan Dipilih':'Tahun Dipilih', value: mode==='live' ? (summary?.total_hari_ini ?? 0) : totalPeriode, color:C.primary, highlight:true },
           { label:'Hari Ini',        value:summary?.total_hari_ini  ?? 0, color:C.secondary },
           { label:'Bulan Ini',       value:summary?.total_bulan_ini ?? 0, color:'#751D00'   },
           { label:'Shift Terbanyak', value:summary?.shift_terbanyak?.nama_shift ?? '-', color:'#164194', isText:true, sub:`${summary?.shift_terbanyak?.total_pelanggaran ?? 0} pelanggaran` },
@@ -310,55 +333,115 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* ── Trend ── */}
-      <div className="cc" style={{ marginBottom:'16px', opacity:chartLoading?0.6:1, transition:'opacity 0.2s' }}>
-        <div className="ct">
-          {mode==='live' ? 'Tren Deteksi Hari Ini' : `Tren Pelanggaran — ${periodeLabel}`}
-        </div>
-        <ResponsiveContainer width="100%" height={200}>
-          <LineChart data={trend} margin={{ top:5, right:5, bottom:0, left:-10 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
-            <XAxis dataKey="tanggal" tick={{ fontSize:10, fill:C.textMuted }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
-            <YAxis allowDecimals={false} tick={{ fontSize:10, fill:C.textMuted }} axisLine={false} tickLine={false} />
-            <Tooltip content={<Tooltip_ />} />
-            <Line type="monotone" dataKey="total" name="Pelanggaran" stroke={C.primary} strokeWidth={2.5} dot={false} activeDot={{ r:4, fill:C.primary }} />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+      {/* ── Main content: charts kiri, camera kanan ── */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 340px', gap:'16px', alignItems:'start' }}>
 
-      {/* ── Bar + Pie ── */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'16px', opacity:chartLoading?0.6:1, transition:'opacity 0.2s' }}>
-        <div className="cc">
-          <div className="ct">Per Shift — {periodeLabel}</div>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={byShift} barSize={36} margin={{ top:20, right:10, bottom:0, left:-10 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
-              <XAxis dataKey="nama_shift" tick={{ fontSize:11, fill:C.textSub }} axisLine={false} tickLine={false} />
-              <YAxis allowDecimals={false} tick={{ fontSize:10, fill:C.textMuted }} axisLine={false} tickLine={false} />
-              <Tooltip content={<Tooltip_ />} />
-              <Bar dataKey="total_pelanggaran" name="Pelanggaran" radius={[5,5,0,0]} label={<BarLabel />}>
-                {byShift.map((_,i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        {/* Kiri: charts */}
+        <div style={{ display:'flex', flexDirection:'column', gap:'16px', opacity:chartLoading?0.6:1, transition:'opacity 0.2s' }}>
+          {/* Tren */}
+          <div className="cc">
+            <div className="ct">
+              {mode==='live' ? 'Grafik Deteksi Hari Ini' : `Grafik Pelanggaran ${periodeLabel}`}
+            </div>
+            <ResponsiveContainer width="100%" height={190}>
+              <LineChart data={trend} margin={{ top:5, right:5, bottom:0, left:-10 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
+                <XAxis dataKey="tanggal" tick={{ fontSize:10, fill:C.textMuted }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                <YAxis allowDecimals={false} tick={{ fontSize:10, fill:C.textMuted }} axisLine={false} tickLine={false} />
+                <Tooltip content={<Tooltip_ />} />
+                <Line type="monotone" dataKey="total" name="Pelanggaran" stroke={C.primary} strokeWidth={2.5} dot={false} activeDot={{ r:4, fill:C.primary }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
 
-        <div className="cc">
-          <div className="ct">Jenis Pelanggaran — {periodeLabel}</div>
-          {byType.length === 0
-            ? <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'200px', color:C.textMuted, fontSize:'13px' }}>Tidak ada data</div>
-            : <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie data={byType} dataKey="total" nameKey="jenis_pelanggaran" cx="38%" cy="50%" outerRadius={80} innerRadius={34} labelLine={false} label={<PieLabel />}>
-                    {byType.map((_,i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                  </Pie>
-                  <Legend layout="vertical" align="right" verticalAlign="middle" content={<PieLegend />} />
-                  <Tooltip content={<Tooltip_ />} formatter={(v,n) => [v, jenisLabel[n] ?? n]} />
-                </PieChart>
+          {/* Bar + Pie */}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'16px' }}>
+            <div className="cc">
+              <div className="ct">Per Shift {periodeLabel}</div>
+              <ResponsiveContainer width="100%" height={190}>
+                <BarChart data={byShift} barSize={32} margin={{ top:20, right:10, bottom:0, left:-10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
+                  <XAxis dataKey="nama_shift" tick={{ fontSize:11, fill:C.textSub }} axisLine={false} tickLine={false} />
+                  <YAxis allowDecimals={false} tick={{ fontSize:10, fill:C.textMuted }} axisLine={false} tickLine={false} />
+                  <Tooltip content={<Tooltip_ />} />
+                  <Bar dataKey="total_pelanggaran" name="Pelanggaran" radius={[5,5,0,0]} label={<BarLabel />}>
+                    {byShift.map((_,i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                  </Bar>
+                </BarChart>
               </ResponsiveContainer>
-          }
+            </div>
+
+            <div className="cc">
+              <div className="ct">Jenis Pelanggaran {periodeLabel}</div>
+              {byType.length === 0
+                ? <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'190px', color:C.textMuted, fontSize:'13px' }}>Tidak ada data</div>
+                : <ResponsiveContainer width="100%" height={190}>
+                    <PieChart>
+                      <Pie data={byType} dataKey="total" nameKey="jenis_pelanggaran" cx="38%" cy="50%" outerRadius={76} innerRadius={32} labelLine={false} label={<PieLabel />}>
+                        {byType.map((_,i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                      </Pie>
+                      <Legend layout="vertical" align="right" verticalAlign="middle" content={<PieLegend />} />
+                      <Tooltip content={<Tooltip_ />} formatter={(v,n) => [v, jenisLabel[n] ?? n]} />
+                    </PieChart>
+                  </ResponsiveContainer>
+              }
+            </div>
+          </div>
         </div>
+
+        {/* Kanan: Live Camera */}
+        <div className="cc" style={{ padding:'16px' }}>
+          {/* Header */}
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'12px' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+              </svg>
+              <span style={{ fontSize:'12px', fontWeight:'700', color:C.textMain, letterSpacing:'0.03em' }}>Live Camera</span>
+            </div>
+            <span style={{ fontSize:'11px', fontWeight:'600', padding:'2px 8px', borderRadius:'20px', background: camOnline ? '#f0fdf4' : '#f1f5f9', color: camOnline ? '#15803d' : C.textMuted }}>
+              {camOnline ? '● Online' : '○ Offline'}
+            </span>
+          </div>
+
+          {/* Feed */}
+          <div style={{ background:'#0f172a', borderRadius:'8px', overflow:'hidden', aspectRatio:'4/3', display:'flex', alignItems:'center', justifyContent:'center', position:'relative' }}>
+            {camOnline ? (
+              <img
+                src={STREAM_URL}
+                alt="Live Feed"
+                style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}
+                onError={() => setCamOnline(false)}
+              />
+            ) : (
+              <div style={{ textAlign:'center', color:'#475569' }}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ marginBottom:'8px', opacity:0.4 }}>
+                  <path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+                <div style={{ fontSize:'12px', opacity:0.5 }}>Tidak terhubung</div>
+                <div style={{ fontSize:'10px', opacity:0.35, marginTop:'4px' }}>Edge device offline</div>
+              </div>
+            )}
+          </div>
+
+          {/* Info kamera */}
+          <div style={{ marginTop:'10px', display:'flex', flexDirection:'column', gap:'5px' }}>
+            {[
+              ['Kamera', 'CAM-01'],
+              ['Lokasi', 'Area Maintenance'],
+              ['Stream', `localhost:5001`],
+            ].map(([label, val]) => (
+              <div key={label} style={{ display:'flex', justifyContent:'space-between', fontSize:'11px' }}>
+                <span style={{ color:C.textMuted }}>{label}</span>
+                <span style={{ color:C.textSub, fontFamily:'monospace' }}>{val}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
+
     </Layout>
   )
 }

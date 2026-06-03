@@ -26,8 +26,8 @@
   .h-logo-right { display: table-cell; width: 100px; vertical-align: middle; text-align: right; }
   .h-center     { display: table-cell; vertical-align: middle; text-align: center; padding: 0 12px; }
 
-  .logo-secvis { height: 38px; width: auto; }
-  .logo-epson  { height: 32px; width: auto; }
+  .logo-secvis { height: 80px; width: auto; }
+  .logo-epson  { height: 60px; width: auto; }
 
   .h-center h1    { font-size: 11pt; color: #111; font-weight: bold; }
   .h-center .sub  { font-size: 8pt; color: #555; margin-top: 2px; }
@@ -111,7 +111,7 @@
 
   {{-- Judul tengah --}}
   <div class="h-center">
-    <h1>Sistem Monitoring K3 — SecVis</h1>
+    <h1>Sistem Monitoring K3 - SecVis</h1>
     <div class="sub">PT Indonesia Epson Industry</div>
     <div class="meta">No. Dok: SV-LAP-{{ str_pad($nomor_laporan, 4, '0', STR_PAD_LEFT) }} &nbsp;|&nbsp; Dicetak: {{ $tanggal_cetak }}</div>
   </div>
@@ -143,12 +143,12 @@
     </div>
     <div class="info-cell">
       <div class="lbl">Shift Terbanyak</div>
-      <div class="val">{{ $shift_terbanyak['nama'] ?? '—' }}</div>
+      <div class="val">{{ $shift_terbanyak['nama'] ?? '-' }}</div>
       <div class="sub">{{ $shift_terbanyak['total'] ?? 0 }} pelanggaran</div>
     </div>
     <div class="info-cell">
       <div class="lbl">APD Paling Dilanggar</div>
-      <div class="val">{{ $apd_terbanyak['nama'] ?? '—' }}</div>
+      <div class="val">{{ $apd_terbanyak['nama'] ?? '-' }}</div>
       <div class="sub">{{ $apd_terbanyak['total'] ?? 0 }} kejadian</div>
     </div>
     <div class="info-cell">
@@ -307,7 +307,7 @@
     </div>
   </div>
   <div class="page-note">
-    Dokumen ini digenerate otomatis oleh sistem SecVis &middot; PT Indonesia Epson Industry &middot; {{ $tanggal_cetak }}
+    Dokumen ini digenerate otomatis oleh sistem SecVis | PT Indonesia Epson Industry | {{ $tanggal_cetak }}
   </div>
 </div>
 

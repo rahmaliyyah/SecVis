@@ -22,17 +22,8 @@ class ViolationController extends Controller
             'timestamp_deteksi' => 'required|date',
         ]);
 
-        // Double check confidence score minimum 80%
-        if ($validated['confidence_score'] < 80) {
-    return response()->json([
-        'success' => false,
-        'message' => 'Pelanggaran diabaikan karena confidence score terlalu rendah (minimum 80%)',
-        'data'    => null,
-    ], 422);
-}
-
         // Tentukan shift aktif otomatis dari timestamp
-        $jam = Carbon::parse($validated['timestamp_deteksi'])->format('H:i:s');
+        $jam   = Carbon::parse($validated['timestamp_deteksi'])->format('H:i:s');
         $shift = Shift::where('jam_mulai', '<=', $jam)
                       ->where('jam_selesai', '>', $jam)
                       ->first();
@@ -51,64 +42,66 @@ class ViolationController extends Controller
             'timestamp_deteksi' => Carbon::parse($validated['timestamp_deteksi'])->format('Y-m-d H:i:s'),
         ]);
 
-        // Load relasi camera untuk keperluan notifikasi
         $violation->load('camera');
 
-        // Cooldown check
-       $inCooldown = Notification::where('camera_id', $validated['camera_id'])
-    ->where('timestamp_kirim', '>=', now()->subSeconds(10))
-    ->exists();
+        // Kirim notif Telegram
+        $statusPengiriman = 'gagal';
 
-        if (!$inCooldown) {
-            $statusPengiriman = 'gagal';
+        try {
+            $token  = env('TELEGRAM_BOT_TOKEN');
+            $chatId = env('TELEGRAM_CHAT_ID');
 
-            try {
-                $token  = env('TELEGRAM_BOT_TOKEN');
-                $chatId = env('TELEGRAM_CHAT_ID');
+            $labelMap = [
+                'no-helmet'  => 'Tidak Memakai Helm',
+                'no-vest'    => 'Tidak Memakai Rompi',
+                'no-boots'   => 'Tidak Memakai Sepatu Safety',
+                'no-gloves'  => 'Tidak Memakai Sarung Tangan',
+                'no-glasses' => 'Tidak Memakai Kacamata',
+            ];
 
-                $caption = "🚨 *PELANGGARAN K3 TERDETEKSI*\n\n"
-                         . "📍 Lokasi: " . $violation->camera->lokasi . "\n"
-                         . "⏰ Waktu: " . $violation->timestamp_deteksi . "\n"
-                         . "🔄 Shift: " . $shift->nama_shift . "\n"
-                         . "⚠️ Pelanggaran: " . strtoupper(str_replace('_', ' ', $violation->jenis_pelanggaran)) . "\n"
-                         . "📊 Confidence: " . $violation->confidence_score . "%";
+            $jenisLabel = $labelMap[$violation->jenis_pelanggaran] ?? strtoupper($violation->jenis_pelanggaran);
 
-                $fotoPath = storage_path('app/public/' . $violation->foto_bukti);
+            $caption = "*PELANGGARAN K3 TERDETEKSI*\n\n"
+                     . "Lokasi: " . $violation->camera->lokasi . "\n"
+                     . "Waktu: " . $violation->timestamp_deteksi . "\n"
+                     . "Shift: " . $shift->nama_shift . "\n"
+                     . "Pelanggaran: " . $jenisLabel . "\n"
+                     . "Confidence: " . $violation->confidence_score . "%\n"
+                     . "Kamera: " . $violation->camera->kode_kamera;
 
-                if (file_exists($fotoPath)) {
-                    // Kirim dengan foto
-                    $response = Http::attach('photo', file_get_contents($fotoPath), basename($fotoPath))
-                        ->post("https://api.telegram.org/bot{$token}/sendPhoto", [
-                            'chat_id'    => $chatId,
-                            'caption'    => $caption,
-                            'parse_mode' => 'Markdown',
-                        ]);
-                } else {
-                    // Kirim tanpa foto kalau file tidak ditemukan
-                    $response = Http::get(
-                        "https://api.telegram.org/bot{$token}/sendMessage",
-                        [
-                            'chat_id'    => $chatId,
-                            'text'       => $caption . "\n\n⚠️ _Foto bukti tidak tersedia_",
-                            'parse_mode' => 'Markdown',
-                        ]
-                    );
-                }
+            $fotoPath = storage_path('app/public/' . $violation->foto_bukti);
 
-                if ($response->successful()) {
-                    $statusPengiriman = 'terkirim';
-                }
-            } catch (\Exception $e) {
-                $statusPengiriman = 'gagal';
+            if (file_exists($fotoPath)) {
+                $response = Http::attach('photo', file_get_contents($fotoPath), basename($fotoPath))
+                    ->post("https://api.telegram.org/bot{$token}/sendPhoto", [
+                        'chat_id'    => $chatId,
+                        'caption'    => $caption,
+                        'parse_mode' => 'Markdown',
+                    ]);
+            } else {
+                $response = Http::get(
+                    "https://api.telegram.org/bot{$token}/sendMessage",
+                    [
+                        'chat_id'    => $chatId,
+                        'text'       => $caption . "\n\nFoto bukti tidak tersedia.",
+                        'parse_mode' => 'Markdown',
+                    ]
+                );
             }
 
-            Notification::create([
-                'violation_id'      => $violation->id,
-                'camera_id'         => $validated['camera_id'],
-                'status_pengiriman' => $statusPengiriman,
-                'timestamp_kirim'   => now(),
-            ]);
+            if ($response->successful()) {
+                $statusPengiriman = 'terkirim';
+            }
+        } catch (\Exception $e) {
+            $statusPengiriman = 'gagal';
         }
+
+        Notification::create([
+            'violation_id'      => $violation->id,
+            'camera_id'         => $validated['camera_id'],
+            'status_pengiriman' => $statusPengiriman,
+            'timestamp_kirim'   => now(),
+        ]);
 
         return response()->json([
             'success' => true,
@@ -131,18 +124,10 @@ class ViolationController extends Controller
         $query = Violation::with(['shift', 'camera'])
             ->orderBy('timestamp_deteksi', 'desc');
 
-        if ($request->shift_id) {
-            $query->where('shift_id', $request->shift_id);
-        }
-        if ($request->jenis_pelanggaran) {
-            $query->where('jenis_pelanggaran', $request->jenis_pelanggaran);
-        }
-        if ($request->tanggal_mulai) {
-            $query->whereDate('timestamp_deteksi', '>=', $request->tanggal_mulai);
-        }
-        if ($request->tanggal_selesai) {
-            $query->whereDate('timestamp_deteksi', '<=', $request->tanggal_selesai);
-        }
+        if ($request->shift_id)          $query->where('shift_id', $request->shift_id);
+        if ($request->jenis_pelanggaran) $query->where('jenis_pelanggaran', $request->jenis_pelanggaran);
+        if ($request->tanggal_mulai)     $query->whereDate('timestamp_deteksi', '>=', $request->tanggal_mulai);
+        if ($request->tanggal_selesai)   $query->whereDate('timestamp_deteksi', '<=', $request->tanggal_selesai);
 
         $perPage = $request->per_page ?? 20;
         $data    = $query->paginate($perPage);
@@ -158,7 +143,7 @@ class ViolationController extends Controller
                 'confidence_score'  => $v->confidence_score,
                 'timestamp_deteksi' => $v->timestamp_deteksi,
             ]),
-            'meta'    => [
+            'meta' => [
                 'total'    => $data->total(),
                 'page'     => $data->currentPage(),
                 'per_page' => $data->perPage(),

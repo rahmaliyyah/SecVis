@@ -45,16 +45,16 @@ class LaporanController extends Controller
         if ($tipe === 'harian') {
             $tanggal = Carbon::parse($request->tanggal);
             $query->whereDate('timestamp_deteksi', $tanggal);
-            $label_periode = 'Harian — ' . $tanggal->translatedFormat('d F Y');
+            $label_periode = 'Harian - ' . $tanggal->translatedFormat('d F Y');
         } elseif ($tipe === 'bulanan') {
             $query->whereYear('timestamp_deteksi', $request->tahun)
                   ->whereMonth('timestamp_deteksi', $request->bulan);
-            $label_periode = 'Bulanan — ' .
+            $label_periode = 'Bulanan - ' .
                 Carbon::createFromDate($request->tahun, $request->bulan, 1)
                       ->translatedFormat('F Y');
         } else {
             $query->whereYear('timestamp_deteksi', $request->tahun);
-            $label_periode = 'Tahunan — ' . $request->tahun;
+            $label_periode = 'Tahunan - ' . $request->tahun;
         }
 
         $violations = $query->orderBy('timestamp_deteksi')->get();
@@ -237,7 +237,7 @@ class LaporanController extends Controller
         }
 
         $sheet->mergeCells('B1:G1');
-        $sheet->setCellValue('B1', 'LAPORAN PELANGGARAN K3 — PT INDONESIA EPSON INDUSTRY');
+        $sheet->setCellValue('B1', 'LAPORAN PELANGGARAN K3 - PT INDONESIA EPSON INDUSTRY');
         $sheet->getStyle('B1')->applyFromArray([
             'font'      => ['bold' => true, 'size' => 13, 'color' => ['argb' => 'FF000000']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
