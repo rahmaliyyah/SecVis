@@ -15,15 +15,17 @@ class DashboardController extends Controller
     public function summary(Request $request)
     {
         $data = Cache::remember('dashboard_summary', 3, function () {
-            $hariIni  = Violation::whereDate('timestamp_deteksi', today())->count();
+            $tz       = 'Asia/Jakarta';
+            $now      = Carbon::now($tz);
+            $hariIni  = Violation::whereDate('timestamp_deteksi', $now->toDateString())->count();
             $mingguIni = Violation::whereBetween('timestamp_deteksi', [
-                now()->startOfWeek(), now()->endOfWeek()
+                $now->copy()->startOfWeek(), $now->copy()->endOfWeek()
             ])->count();
-            $bulanIni = Violation::whereYear('timestamp_deteksi', now()->year)
-                ->whereMonth('timestamp_deteksi', now()->month)->count();
+            $bulanIni = Violation::whereYear('timestamp_deteksi', $now->year)
+                ->whereMonth('timestamp_deteksi', $now->month)->count();
 
-            $shiftTerbanyak = Violation::whereYear('timestamp_deteksi', now()->year)
-                ->whereMonth('timestamp_deteksi', now()->month)
+            $shiftTerbanyak = Violation::whereYear('timestamp_deteksi', $now->year)
+                ->whereMonth('timestamp_deteksi', $now->month)
                 ->selectRaw('shift_id, count(*) as total')
                 ->groupBy('shift_id')
                 ->orderByDesc('total')
@@ -132,8 +134,10 @@ class DashboardController extends Controller
                     Carbon::parse($request->tanggal_selesai)->endOfDay(),
                 ]);
             } else {
-                $query->whereYear('timestamp_deteksi', now()->year)
-                      ->whereMonth('timestamp_deteksi', now()->month);
+                $tz  = 'Asia/Jakarta';
+                $now = Carbon::now($tz);
+                $query->whereYear('timestamp_deteksi', $now->year)
+                      ->whereMonth('timestamp_deteksi', $now->month);
             }
 
             $violations = $query->get();
@@ -170,8 +174,10 @@ class DashboardController extends Controller
                     Carbon::parse($request->tanggal_selesai)->endOfDay(),
                 ]);
             } else {
-                $query->whereYear('timestamp_deteksi', now()->year)
-                      ->whereMonth('timestamp_deteksi', now()->month);
+                $tz  = 'Asia/Jakarta';
+                $now = Carbon::now($tz);
+                $query->whereYear('timestamp_deteksi', $now->year)
+                      ->whereMonth('timestamp_deteksi', $now->month);
             }
 
             return $query->selectRaw('jenis_pelanggaran, COUNT(*) as total')

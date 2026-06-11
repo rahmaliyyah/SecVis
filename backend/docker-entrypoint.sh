@@ -11,6 +11,7 @@ APP_ENV=${APP_ENV:-production}
 APP_DEBUG=${APP_DEBUG:-false}
 APP_URL=${APP_URL:-http://localhost:8000}
 APP_KEY=$APP_KEY
+APP_TIMEZONE=Asia/Jakarta
 
 DB_CONNECTION=mysql
 DB_HOST=${DB_HOST:-db}
@@ -39,7 +40,6 @@ php artisan migrate --force
 
 # Seed database
 php artisan db:seed --force
-
 
 # Storage link
 php artisan storage:link || true
