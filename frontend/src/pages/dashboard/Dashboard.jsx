@@ -20,7 +20,6 @@ const jenisLabel = {
 }
 const bulanList = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
 
-// ─── Sub-components ──────────────────────────────────────────────
 const Tooltip_ = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
   return (
@@ -57,16 +56,14 @@ const BarLabel = ({ x, y, width, value }) => {
   return <text x={x + width/2} y={y - 6} fill={C.textMuted} textAnchor="middle" fontSize={11} fontWeight="600">{value}</text>
 }
 
-// ─── Main Component ───────────────────────────────────────────────
 export default function Dashboard() {
-  const navigate   = useNavigate()
-  const admin      = isAdmin()
+  const navigate    = useNavigate()
+  const admin       = isAdmin()
   const intervalId  = useRef(null)
-  const STREAM_URL   = 'http://localhost:5001/stream'
-  const [showCamera, setShowCamera] = useState(false)
-  const [camOnline,  setCamOnline]  = useState(false)
+  const chartIntRef = useRef(null)
+  const STREAM_URL  = 'http://localhost:5001/stream'
+  const [camOnline, setCamOnline] = useState(false)
 
-  // Cek apakah stream online
   useEffect(() => {
     const check = () => {
       fetch('http://localhost:5001/status')
@@ -78,21 +75,16 @@ export default function Dashboard() {
     return () => clearInterval(i)
   }, [])
 
-  // mode: 'live' | 'periode'
   const [mode,         setMode]         = useState('live')
-  const [shifts,       setShifts]       = useState([])
   const [cameras,      setCameras]      = useState([])
-  const [filterShift,  setFilterShift]  = useState('')
   const [filterCamera, setFilterCamera] = useState('')
   const [lastUpdate,   setLastUpdate]   = useState('')
 
-  // periode
   const [tipe,    setTipe]    = useState('bulanan')
   const [tanggal, setTanggal] = useState(() => new Date().toISOString().split('T')[0])
   const [bulan,   setBulan]   = useState(() => new Date().getMonth() + 1)
   const [tahun,   setTahun]   = useState(() => new Date().getFullYear())
 
-  // data
   const [summary,      setSummary]      = useState(null)
   const [trend,        setTrend]        = useState([])
   const [byShift,      setByShift]      = useState([])
@@ -101,12 +93,7 @@ export default function Dashboard() {
   const [loading,      setLoading]      = useState(true)
   const [chartLoading, setChartLoading] = useState(false)
 
-  // Load dropdown data
   useEffect(() => {
-    api.get('/shifts').then(r => {
-      const d = r.data.data
-      setShifts(Array.isArray(d) ? d : [])
-    }).catch(() => {})
     api.get('/cameras').then(r => {
       const d = r.data.data
       setCameras(Array.isArray(d) ? d : [])
@@ -133,14 +120,12 @@ export default function Dashboard() {
           tanggal_mulai: today, tanggal_selesai: today,
           periode: 'harian', tanggal: today,
         }
-        const sh = opts.filterShift  !== undefined ? opts.filterShift  : filterShift
         const ca = opts.filterCamera !== undefined ? opts.filterCamera : filterCamera
-        if (sh) params.shift_id  = sh
         if (ca) params.camera_id = ca
       } else {
-        const t = opts.tipe  ?? tipe
-        const b = opts.bulan ?? bulan
-        const y = opts.tahun ?? tahun
+        const t = opts.tipe    ?? tipe
+        const b = opts.bulan   ?? bulan
+        const y = opts.tahun   ?? tahun
         const d = opts.tanggal ?? tanggal
         const fmt = dt => dt.toISOString().split('T')[0]
         let start, end, apiPeriode
@@ -155,7 +140,7 @@ export default function Dashboard() {
           start = fmt(new Date(y, 0, 1))
           const e = new Date(y, 11, 31)
           end = fmt(e) > today ? today : fmt(e)
-          apiPeriode = 'bulanan'
+          apiPeriode = 'tahunan'
         }
         params = { tanggal_mulai: start, tanggal_selesai: end, periode: apiPeriode }
       }
@@ -176,38 +161,33 @@ export default function Dashboard() {
       setChartLoading(false)
       setLoading(false)
     }
-  }, [mode, filterShift, filterCamera, tipe, bulan, tahun, tanggal])
+  }, [mode, filterCamera, tipe, bulan, tahun, tanggal])
 
-  // Mode change → restart everything
   useEffect(() => {
     clearInterval(intervalId.current)
+    clearInterval(chartIntRef.current)
     fetchSummary()
     fetchCharts({ mode })
     if (mode === 'live') {
-     intervalId.current = setInterval(() => {
-    fetchSummary()
-}, 1000)
-
-const chartInterval = setInterval(() => {
-    fetchCharts({ mode: 'live' })
-}, 1000)
-
-return () => {
-    clearInterval(intervalId.current)
-    clearInterval(chartInterval)
-}
+      intervalId.current = setInterval(() => {
+        fetchSummary()
+      }, 3000)
+      chartIntRef.current = setInterval(() => {
+        fetchCharts({ mode: 'live' })
+      }, 15000)
     }
-    return () => clearInterval(intervalId.current)
+    return () => {
+      clearInterval(intervalId.current)
+      clearInterval(chartIntRef.current)
+    }
   }, [mode]) // eslint-disable-line
 
-  // Live filter change
   useEffect(() => {
     if (mode === 'live' && !loading) {
-      fetchCharts({ mode: 'live', filterShift, filterCamera })
+      fetchCharts({ mode: 'live', filterCamera })
     }
-  }, [filterShift, filterCamera]) // eslint-disable-line
+  }, [filterCamera]) // eslint-disable-line
 
-  // Periode filter change
   useEffect(() => {
     if (mode === 'periode' && !loading) {
       fetchCharts({ mode: 'periode', tipe, tanggal, bulan, tahun })
@@ -219,7 +199,6 @@ return () => {
     : tipe === 'bulanan' ? `${bulanList[bulan - 1]} ${tahun}`
     : `Tahun ${tahun}`
 
-  // ─── Styles ──────────────────────────────────────────────────────
   const card    = { background:'#fff', border:`1px solid ${C.border}`, borderRadius:'12px', padding:'18px 20px', boxShadow:'0 1px 4px rgba(0,0,0,0.05)', position:'relative', overflow:'hidden' }
   const inStyle = { background:'#fff', border:`1.5px solid ${C.border}`, borderRadius:'7px', padding:'6px 10px', fontSize:'12px', color:C.textMain, outline:'none', fontFamily:'inherit' }
 
@@ -230,6 +209,18 @@ return () => {
       </div>
     </Layout>
   )
+
+  const shiftTerbanyak = byShift.find(s => (s.total_pelanggaran ?? 0) > 0)
+
+  const kpiCards = mode === 'live' ? [
+    { label:'Live Hari Ini',   value: summary?.total_hari_ini  ?? 0, color:C.primary,  highlight:true },
+    { label:'Hari Ini',        value: summary?.total_hari_ini  ?? 0, color:C.secondary },
+    { label:'Bulan Ini',       value: summary?.total_bulan_ini ?? 0, color:'#751D00'   },
+    { label:'Shift Terbanyak', value: summary?.shift_terbanyak?.nama_shift ?? '-', color:'#164194', isText:true, sub:`${summary?.shift_terbanyak?.total_pelanggaran ?? 0} pelanggaran` },
+  ] : [
+    { label: tipe==='harian'?'Tanggal Dipilih':tipe==='bulanan'?'Bulan Dipilih':'Tahun Dipilih', value: totalPeriode, color:C.primary, highlight:true },
+    { label:'Shift Terbanyak', value: shiftTerbanyak?.nama_shift ?? '-', color:'#164194', isText:true, sub:`${shiftTerbanyak?.total_pelanggaran ?? 0} pelanggaran` },
+  ]
 
   return (
     <Layout>
@@ -260,8 +251,6 @@ return () => {
       {/* ── Filter bar ── */}
       <div style={{ background:'#fff', border:`1px solid ${C.border}`, borderRadius:'12px', padding:'12px 16px', marginBottom:'20px', boxShadow:'0 1px 4px rgba(0,0,0,0.04)' }}>
         <div style={{ display:'flex', gap:'10px', alignItems:'center', flexWrap:'wrap' }}>
-
-          {/* Mode toggle */}
           <div style={{ display:'flex', gap:'3px', background:'#f4f6fb', borderRadius:'8px', padding:'3px', flexShrink:0 }}>
             {[
               { key:'live',    label:'● Live' },
@@ -277,18 +266,13 @@ return () => {
 
           <div style={{ width:'1px', height:'22px', background:C.border }} />
 
-          {/* Live filters */}
           {mode === 'live' && <>
-            <select value={filterShift} onChange={e => setFilterShift(e.target.value)} style={inStyle}>
-              <option value="">Semua Shift</option>
-              {(shifts || []).map(s => <option key={s.id} value={s.id}>{s.nama_shift}</option>)}
-            </select>
             <select value={filterCamera} onChange={e => setFilterCamera(e.target.value)} style={inStyle}>
               <option value="">Semua Kamera</option>
               {(cameras || []).map(c => <option key={c.id} value={c.id}>{c.kode_kamera} — {c.lokasi}</option>)}
             </select>
-            {(filterShift || filterCamera) && (
-              <button onClick={() => { setFilterShift(''); setFilterCamera('') }} style={{ fontSize:'11px', color:C.textSub, background:'none', border:'none', cursor:'pointer', fontFamily:'inherit' }}>Reset</button>
+            {filterCamera && (
+              <button onClick={() => setFilterCamera('')} style={{ fontSize:'11px', color:C.textSub, background:'none', border:'none', cursor:'pointer', fontFamily:'inherit' }}>Reset</button>
             )}
             <span style={{ marginLeft:'auto', fontSize:'11px', color:C.textMuted, display:'flex', alignItems:'center', gap:'5px' }}>
               <span className="pulse" style={{ width:'6px', height:'6px', borderRadius:'50%', background:'#22c55e', display:'inline-block' }} />
@@ -296,14 +280,13 @@ return () => {
             </span>
           </>}
 
-          {/* Periode filters */}
           {mode === 'periode' && <>
             <div style={{ display:'flex', gap:'3px', background:'#f4f6fb', borderRadius:'7px', padding:'3px' }}>
               {['harian','bulanan','tahunan'].map(t => (
                 <button key={t} onClick={() => setTipe(t)} style={{ padding:'5px 12px', borderRadius:'5px', border:'none', fontSize:'12px', fontWeight: tipe===t?'600':'400', cursor:'pointer', fontFamily:'inherit', textTransform:'capitalize', background: tipe===t?'#fff':'transparent', color: tipe===t?C.primary:C.textSub, boxShadow: tipe===t?'0 1px 3px rgba(0,0,0,0.1)':'none', transition:'all 0.15s' }}>{t}</button>
               ))}
             </div>
-            {tipe==='harian'  && <input type="date"   value={tanggal} onChange={e => setTanggal(e.target.value)} style={inStyle} />}
+            {tipe==='harian'  && <input type="date" value={tanggal} onChange={e => setTanggal(e.target.value)} style={inStyle} />}
             {tipe==='bulanan' && <>
               <select value={bulan} onChange={e => setBulan(Number(e.target.value))} style={inStyle}>
                 {bulanList.map((b,i) => <option key={i} value={i+1}>{b}</option>)}
@@ -317,13 +300,8 @@ return () => {
       </div>
 
       {/* ── KPI Cards ── */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'14px', marginBottom:'20px', opacity:chartLoading?0.6:1, transition:'opacity 0.2s' }}>
-        {[
-          { label: mode==='live'?'Live Hari Ini': tipe==='harian'?'Tanggal Dipilih':tipe==='bulanan'?'Bulan Dipilih':'Tahun Dipilih', value: mode==='live' ? (summary?.total_hari_ini ?? 0) : totalPeriode, color:C.primary, highlight:true },
-          { label:'Hari Ini',        value:summary?.total_hari_ini  ?? 0, color:C.secondary },
-          { label:'Bulan Ini',       value:summary?.total_bulan_ini ?? 0, color:'#751D00'   },
-          { label:'Shift Terbanyak', value:summary?.shift_terbanyak?.nama_shift ?? '-', color:'#164194', isText:true, sub:`${summary?.shift_terbanyak?.total_pelanggaran ?? 0} pelanggaran` },
-        ].map((k,i) => (
+      <div style={{ display:'grid', gridTemplateColumns: mode==='live' ? 'repeat(4,1fr)' : 'repeat(2,1fr)', gap:'14px', marginBottom:'20px', opacity:chartLoading?0.6:1, transition:'opacity 0.2s' }}>
+        {kpiCards.map((k,i) => (
           <div key={i} style={{ ...card, background:k.highlight?C.primary:'#fff', border:`1px solid ${k.highlight?C.primary:C.border}` }}>
             {!k.highlight && <div style={{ position:'absolute', top:0, left:0, right:0, height:'3px', background:k.color }} />}
             <div style={{ fontSize:'11px', fontWeight:'600', letterSpacing:'0.07em', textTransform:'uppercase', color:k.highlight?'rgba(255,255,255,0.7)':C.textMuted, marginBottom:'8px' }}>{k.label}</div>
@@ -333,12 +311,11 @@ return () => {
         ))}
       </div>
 
-      {/* ── Main content: charts kiri, camera kanan ── */}
+      {/* ── Main content ── */}
       <div style={{ display:'grid', gridTemplateColumns:'1fr 340px', gap:'16px', alignItems:'start' }}>
 
         {/* Kiri: charts */}
         <div style={{ display:'flex', flexDirection:'column', gap:'16px', opacity:chartLoading?0.6:1, transition:'opacity 0.2s' }}>
-          {/* Tren */}
           <div className="cc">
             <div className="ct">
               {mode==='live' ? 'Grafik Deteksi Hari Ini' : `Grafik Pelanggaran ${periodeLabel}`}
@@ -354,7 +331,6 @@ return () => {
             </ResponsiveContainer>
           </div>
 
-          {/* Bar + Pie */}
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'16px' }}>
             <div className="cc">
               <div className="ct">Per Shift {periodeLabel}</div>
@@ -391,7 +367,6 @@ return () => {
 
         {/* Kanan: Live Camera */}
         <div className="cc" style={{ padding:'16px' }}>
-          {/* Header */}
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'12px' }}>
             <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -404,15 +379,9 @@ return () => {
             </span>
           </div>
 
-          {/* Feed */}
           <div style={{ background:'#0f172a', borderRadius:'8px', overflow:'hidden', aspectRatio:'4/3', display:'flex', alignItems:'center', justifyContent:'center', position:'relative' }}>
             {camOnline ? (
-              <img
-                src={STREAM_URL}
-                alt="Live Feed"
-                style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}
-                onError={() => setCamOnline(false)}
-              />
+              <img src={STREAM_URL} alt="Live Feed" style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }} onError={() => setCamOnline(false)} />
             ) : (
               <div style={{ textAlign:'center', color:'#475569' }}>
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ marginBottom:'8px', opacity:0.4 }}>
@@ -425,12 +394,11 @@ return () => {
             )}
           </div>
 
-          {/* Info kamera */}
           <div style={{ marginTop:'10px', display:'flex', flexDirection:'column', gap:'5px' }}>
             {[
               ['Kamera', 'CAM-01'],
               ['Lokasi', 'Area Maintenance'],
-              ['Stream', `localhost:5001`],
+              ['Stream', 'localhost:5001'],
             ].map(([label, val]) => (
               <div key={label} style={{ display:'flex', justifyContent:'space-between', fontSize:'11px' }}>
                 <span style={{ color:C.textMuted }}>{label}</span>
@@ -441,7 +409,6 @@ return () => {
         </div>
 
       </div>
-
     </Layout>
   )
 }

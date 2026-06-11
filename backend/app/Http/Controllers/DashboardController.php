@@ -44,14 +44,52 @@ class DashboardController extends Controller
         return response()->json(['status' => 'success', 'data' => $data]);
     }
 
+    // ─── SUMMARY PERIODE (dengan filter tanggal) ─────────────────
+    public function summaryPeriode(Request $request)
+    {
+        $request->validate([
+            'tanggal_mulai'   => 'required|date',
+            'tanggal_selesai' => 'required|date',
+        ]);
+
+        $cacheKey = 'dashboard_summary_periode_' . md5(json_encode($request->all()));
+
+        $data = Cache::remember($cacheKey, 10, function () use ($request) {
+            $total = Violation::whereBetween('timestamp_deteksi', [
+                Carbon::parse($request->tanggal_mulai)->startOfDay(),
+                Carbon::parse($request->tanggal_selesai)->endOfDay(),
+            ])->count();
+
+            $shiftTerbanyak = Violation::whereBetween('timestamp_deteksi', [
+                Carbon::parse($request->tanggal_mulai)->startOfDay(),
+                Carbon::parse($request->tanggal_selesai)->endOfDay(),
+            ])
+                ->selectRaw('shift_id, count(*) as total')
+                ->groupBy('shift_id')
+                ->orderByDesc('total')
+                ->with('shift')
+                ->first();
+
+            return [
+                'total_periode'   => $total,
+                'shift_terbanyak' => $shiftTerbanyak ? [
+                    'nama_shift'        => $shiftTerbanyak->shift->nama_shift ?? '-',
+                    'total_pelanggaran' => $shiftTerbanyak->total,
+                ] : null,
+            ];
+        });
+
+        return response()->json(['status' => 'success', 'data' => $data]);
+    }
+
     // ─── TREND (date range + optional shift/camera filter) ────────
     public function trend(Request $request)
     {
         $request->validate([
-            'tanggal_mulai'  => 'required|date',
+            'tanggal_mulai'   => 'required|date',
             'tanggal_selesai' => 'required|date',
-            'shift_id'       => 'nullable|integer',
-            'camera_id'      => 'nullable|integer',
+            'shift_id'        => 'nullable|integer',
+            'camera_id'       => 'nullable|integer',
         ]);
 
         $cacheKey = 'dashboard_trend_' . md5(json_encode($request->all()));
@@ -78,21 +116,21 @@ class DashboardController extends Controller
         return response()->json(['status' => 'success', 'data' => $data]);
     }
 
-    // ─── BY SHIFT (periode + optional camera filter) ──────────────
+    // ─── BY SHIFT (date range + optional camera filter) ──────────────
     public function byShift(Request $request)
     {
-        $periode   = $request->get('periode', 'bulanan');
         $camera_id = $request->camera_id;
+        $cacheKey  = 'dashboard_byshift_' . md5(json_encode($request->all()));
 
-        $cacheKey = 'dashboard_byshift_' . md5(json_encode($request->all()));
-
-        $data = Cache::remember($cacheKey, 10, function () use ($request, $periode, $camera_id) {
+        $data = Cache::remember($cacheKey, 10, function () use ($request, $camera_id) {
             $query = Violation::query();
             if ($camera_id) $query->where('camera_id', $camera_id);
 
-            if ($periode === 'harian') {
-                $tanggal = $request->tanggal ?? today()->toDateString();
-                $query->whereDate('timestamp_deteksi', $tanggal);
+            if ($request->tanggal_mulai && $request->tanggal_selesai) {
+                $query->whereBetween('timestamp_deteksi', [
+                    Carbon::parse($request->tanggal_mulai)->startOfDay(),
+                    Carbon::parse($request->tanggal_selesai)->endOfDay(),
+                ]);
             } else {
                 $query->whereYear('timestamp_deteksi', now()->year)
                       ->whereMonth('timestamp_deteksi', now()->month);
@@ -114,23 +152,23 @@ class DashboardController extends Controller
         return response()->json(['status' => 'success', 'data' => $data]);
     }
 
-    // ─── BY TYPE (periode + optional shift/camera filter) ─────────
+    // ─── BY TYPE (date range + optional shift/camera filter) ─────────
     public function byType(Request $request)
     {
-        $periode   = $request->get('periode', 'bulanan');
         $shift_id  = $request->shift_id;
         $camera_id = $request->camera_id;
+        $cacheKey  = 'dashboard_bytype_' . md5(json_encode($request->all()));
 
-        $cacheKey = 'dashboard_bytype_' . md5(json_encode($request->all()));
-
-        $data = Cache::remember($cacheKey, 10, function () use ($request, $periode, $shift_id, $camera_id) {
+        $data = Cache::remember($cacheKey, 10, function () use ($request, $shift_id, $camera_id) {
             $query = Violation::query();
             if ($shift_id)  $query->where('shift_id',  $shift_id);
             if ($camera_id) $query->where('camera_id', $camera_id);
 
-            if ($periode === 'harian') {
-                $tanggal = $request->tanggal ?? today()->toDateString();
-                $query->whereDate('timestamp_deteksi', $tanggal);
+            if ($request->tanggal_mulai && $request->tanggal_selesai) {
+                $query->whereBetween('timestamp_deteksi', [
+                    Carbon::parse($request->tanggal_mulai)->startOfDay(),
+                    Carbon::parse($request->tanggal_selesai)->endOfDay(),
+                ]);
             } else {
                 $query->whereYear('timestamp_deteksi', now()->year)
                       ->whereMonth('timestamp_deteksi', now()->month);
