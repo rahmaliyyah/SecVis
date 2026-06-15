@@ -153,7 +153,7 @@ export default function Sidebar() {
           const active = location.pathname === menu.path
           return (
             <div key={menu.path} style={{ position: 'relative' }}>
-              {active && <div className="active-pip" />}
+             
               <Link to={menu.path} className={`sb-link ${active ? 'active' : ''}`}>
                 <span className="sb-icon">{menu.icon}</span>
                 {menu.label}

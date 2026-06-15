@@ -22,6 +22,20 @@ class ViolationController extends Controller
             'timestamp_deteksi' => 'required|date',
         ]);
 
+        // Simpan foto dari base64 jika ada
+        if (!empty($request->foto_base64)) {
+            $tanggal  = Carbon::parse($validated['timestamp_deteksi'])->format('Y-m-d');
+            $filename = basename($validated['foto_bukti']);
+            $folder   = storage_path('app/public/violations/' . $tanggal);
+
+            if (!file_exists($folder)) {
+                mkdir($folder, 0775, true);
+            }
+
+            $fotoData = base64_decode($request->foto_base64);
+            file_put_contents($folder . '/' . $filename, $fotoData);
+        }
+
         // Tentukan shift aktif otomatis dari timestamp
         $jam   = Carbon::parse($validated['timestamp_deteksi'])->format('H:i:s');
         $shift = Shift::where('jam_mulai', '<=', $jam)

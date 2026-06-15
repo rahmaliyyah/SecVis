@@ -4,14 +4,39 @@ import api from '../../api/axios'
 
 const C = { primary:'#003399', primaryLight:'#e8eef8', border:'#e4e8f0', textMain:'#1a2340', textSub:'#7a85a0', textMuted:'#b0bac8' }
 
+function DeleteDialog({ item, label, onConfirm, onCancel, deleting }) {
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.4)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:50, backdropFilter:'blur(4px)' }} onClick={onCancel}>
+      <div style={{ background:'#fff', border:`1px solid ${C.border}`, borderRadius:'16px', padding:'28px', width:'100%', maxWidth:'380px', margin:'0 16px', boxShadow:'0 20px 60px rgba(0,0,0,0.15)' }} onClick={e => e.stopPropagation()}>
+        <div style={{ width:'44px', height:'44px', background:'#fff0f0', borderRadius:'12px', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:'16px' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+          </svg>
+        </div>
+        <div style={{ fontSize:'15px', fontWeight:'700', color:C.textMain, marginBottom:'8px' }}>Hapus {label}?</div>
+        <div style={{ fontSize:'13px', color:C.textSub, marginBottom:'24px', lineHeight:'1.5' }}>
+          Data <strong style={{ color:C.textMain }}>{item}</strong> akan dihapus secara permanen dan tidak dapat dikembalikan.
+        </div>
+        <div style={{ display:'flex', gap:'8px', justifyContent:'flex-end' }}>
+          <button onClick={onCancel} style={{ background:C.primaryLight, color:C.primary, border:'none', borderRadius:'8px', padding:'9px 18px', fontSize:'13px', fontWeight:'600', cursor:'pointer', fontFamily:'inherit' }}>Batal</button>
+          <button onClick={onConfirm} disabled={deleting} style={{ background:'#dc2626', color:'#fff', border:'none', borderRadius:'8px', padding:'9px 18px', fontSize:'13px', fontWeight:'600', cursor:'pointer', fontFamily:'inherit', opacity:deleting?0.6:1 }}>
+            {deleting ? 'Menghapus...' : 'Ya, Hapus'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Shifts() {
-  const [shifts,   setShifts]   = useState([])
-  const [loading,  setLoading]  = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [editData, setEditData] = useState(null)
-  const [form,     setForm]     = useState({ nama_shift:'', jam_mulai:'', jam_selesai:'' })
-  const [saving,   setSaving]   = useState(false)
-  const [deleting, setDeleting] = useState(null)
+  const [shifts,       setShifts]       = useState([])
+  const [loading,      setLoading]      = useState(true)
+  const [showForm,     setShowForm]     = useState(false)
+  const [editData,     setEditData]     = useState(null)
+  const [form,         setForm]         = useState({ nama_shift:'', jam_mulai:'', jam_selesai:'' })
+  const [saving,       setSaving]       = useState(false)
+  const [deleting,     setDeleting]     = useState(null)
+  const [deleteTarget, setDeleteTarget] = useState(null)
 
   const fetchShifts = async () => { setLoading(true); try { const res = await api.get('/shifts'); setShifts(res.data.data) } catch(err){console.error(err)} finally{setLoading(false)} }
   useEffect(() => { fetchShifts() }, [])
@@ -22,9 +47,12 @@ export default function Shifts() {
     catch(err){console.error(err)} finally{setSaving(false)}
   }
   const handleEdit = (s) => { setEditData(s); setForm({nama_shift:s.nama_shift,jam_mulai:s.jam_mulai,jam_selesai:s.jam_selesai}); setShowForm(true) }
-  const handleDelete = async (id) => {
-    if (!confirm('Yakin ingin menghapus shift ini?')) return
-    setDeleting(id); try { await api.delete(`/shifts/${id}`); fetchShifts() } catch(err){console.error(err)} finally{setDeleting(null)}
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(deleteTarget.id)
+    try { await api.delete(`/shifts/${deleteTarget.id}`); fetchShifts() }
+    catch(err){console.error(err)}
+    finally { setDeleting(null); setDeleteTarget(null) }
   }
 
   const inStyle = { width:'100%', background:'#fff', border:`1.5px solid ${C.border}`, borderRadius:'8px', padding:'8px 12px', fontSize:'13px', color:C.textMain, outline:'none', fontFamily:'inherit', boxSizing:'border-box' }
@@ -84,13 +112,23 @@ export default function Shifts() {
                 <td style={{ padding:'12px 16px', color:C.textSub, fontFamily:"'DM Mono',monospace", fontSize:'12px' }}>{s.jam_selesai}</td>
                 <td style={{ padding:'12px 16px', display:'flex', gap:'8px' }}>
                   <button onClick={() => handleEdit(s)} style={{ background:C.primaryLight, color:C.primary, border:'none', borderRadius:'6px', padding:'5px 12px', fontSize:'12px', fontWeight:'600', cursor:'pointer', fontFamily:'inherit' }}>Edit</button>
-                  <button onClick={() => handleDelete(s.id)} disabled={deleting===s.id} style={{ background:'#fff0f0', color:'#dc2626', border:'none', borderRadius:'6px', padding:'5px 12px', fontSize:'12px', fontWeight:'600', cursor:'pointer', fontFamily:'inherit', opacity:deleting===s.id?0.5:1 }}>{deleting===s.id?'...':'Hapus'}</button>
+                  <button onClick={() => setDeleteTarget(s)} disabled={deleting===s.id} style={{ background:'#fff0f0', color:'#dc2626', border:'none', borderRadius:'6px', padding:'5px 12px', fontSize:'12px', fontWeight:'600', cursor:'pointer', fontFamily:'inherit', opacity:deleting===s.id?0.5:1 }}>{deleting===s.id?'...':'Hapus'}</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {deleteTarget && (
+        <DeleteDialog
+          item={deleteTarget.nama_shift}
+          label="Shift"
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteTarget(null)}
+          deleting={deleting === deleteTarget.id}
+        />
+      )}
     </Layout>
   )
 }

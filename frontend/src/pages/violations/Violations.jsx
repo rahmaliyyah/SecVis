@@ -52,15 +52,22 @@ export default function Violations() {
       </div>
 
       {/* Filter */}
-      <div style={{ background:'#fff', border:`1px solid ${C.border}`, borderRadius:'12px', padding:'14px 16px', marginBottom:'16px', display:'flex', gap:'10px', flexWrap:'wrap', alignItems:'center', boxShadow:'0 1px 4px rgba(0,0,0,0.04)' }}>
-        <select value={filters.jenis_pelanggaran} onChange={e => setFilters({...filters, jenis_pelanggaran:e.target.value, page:1})} style={inStyle}>
-          <option value="">Semua Jenis</option>
-          {Object.entries(jenisLabel).map(([val,label]) => <option key={val} value={val}>{label}</option>)}
-        </select>
-        <input type="date" value={filters.tanggal_mulai} onChange={e => setFilters({...filters, tanggal_mulai:e.target.value, page:1})} style={inStyle} />
-        <input type="date" value={filters.tanggal_selesai} onChange={e => setFilters({...filters, tanggal_selesai:e.target.value, page:1})} style={inStyle} />
-        <button onClick={() => setFilters({jenis_pelanggaran:'',tanggal_mulai:'',tanggal_selesai:'',page:1})} style={{ ...inStyle, color:C.textSub }}>Reset</button>
-      </div>
+    
+<div style={{ background:'#fff', border:`1px solid ${C.border}`, borderRadius:'12px', padding:'14px 16px', marginBottom:'16px', display:'flex', gap:'10px', flexWrap:'wrap', alignItems:'flex-end', boxShadow:'0 1px 4px rgba(0,0,0,0.04)' }}>
+  <select value={filters.jenis_pelanggaran} onChange={e => setFilters({...filters, jenis_pelanggaran:e.target.value, page:1})} style={inStyle}>
+    <option value="">Semua Jenis</option>
+    {Object.entries(jenisLabel).map(([val,label]) => <option key={val} value={val}>{label}</option>)}
+  </select>
+  <div style={{ display:'flex', flexDirection:'column', gap:'4px' }}>
+    <span style={{ fontSize:'11px', color:C.textMuted, fontWeight:'600', letterSpacing:'0.05em' }}>DARI TANGGAL</span>
+    <input type="date" value={filters.tanggal_mulai} onChange={e => setFilters({...filters, tanggal_mulai:e.target.value, page:1})} style={inStyle} />
+  </div>
+  <div style={{ display:'flex', flexDirection:'column', gap:'4px' }}>
+    <span style={{ fontSize:'11px', color:C.textMuted, fontWeight:'600', letterSpacing:'0.05em' }}>SAMPAI TANGGAL</span>
+    <input type="date" value={filters.tanggal_selesai} onChange={e => setFilters({...filters, tanggal_selesai:e.target.value, page:1})} style={inStyle} />
+  </div>
+  <button onClick={() => setFilters({jenis_pelanggaran:'',tanggal_mulai:'',tanggal_selesai:'',page:1})} style={{ ...inStyle, color:C.textSub }}>Reset</button>
+</div>
 
       {/* Table */}
       <div style={{ background:'#fff', border:`1px solid ${C.border}`, borderRadius:'12px', overflow:'hidden', boxShadow:'0 1px 4px rgba(0,0,0,0.04)' }}>
