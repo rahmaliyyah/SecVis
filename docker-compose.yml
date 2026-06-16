@@ -13,6 +13,8 @@ services:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
+    networks:
+      - secvis_net
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
@@ -34,7 +36,7 @@ services:
       APP_DEBUG: false
       APP_URL: http://localhost:8000
       DB_CONNECTION: mysql
-      DB_HOST: db
+      DB_HOST: secvis_db
       DB_PORT: 3306
       DB_DATABASE: secvis
       DB_USERNAME: secvis_user
@@ -49,6 +51,8 @@ services:
       - "8000:8000"
     volumes:
       - ./backend/storage/app/public:/var/www/html/storage/app/public
+    networks:
+      - secvis_net
 
   frontend:
     build:
@@ -62,6 +66,86 @@ services:
       - backend
     ports:
       - "80:80"
+    networks:
+      - secvis_net
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: secvis_mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./monitoring/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+    networks:
+      - secvis_net
+
+  influxdb:
+    image: influxdb:2.7
+    container_name: secvis_influxdb
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+      - influxdb_config:/etc/influxdb2
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: admin12345
+      DOCKER_INFLUXDB_INIT_ORG: epson
+      DOCKER_INFLUXDB_INIT_BUCKET: resource_monitoring
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_TOKEN:-super-secret-token-change-me}
+    networks:
+      - secvis_net
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  telegraf:
+    image: telegraf:1.32
+    container_name: secvis_telegraf
+    restart: unless-stopped
+    depends_on:
+      - mosquitto
+      - influxdb
+    environment:
+      INFLUXDB_TOKEN: ${INFLUXDB_TOKEN:-super-secret-token-change-me}
+    volumes:
+      - ./monitoring/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    networks:
+      - secvis_net
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: secvis_grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_SERVER_ROOT_URL: http://localhost:3000
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    networks:
+      - secvis_net
+
+networks:
+  secvis_net:
+    driver: bridge
 
 volumes:
   db_data:
+  mosquitto_data:
+  mosquitto_log:
+  influxdb_data:
+  influxdb_config:
+  grafana_data:
