@@ -171,10 +171,10 @@ export default function Dashboard() {
     if (mode === 'live') {
       intervalId.current = setInterval(() => {
         fetchSummary()
-      }, 3000)
+      }, 1000)
       chartIntRef.current = setInterval(() => {
         fetchCharts({ mode: 'live' })
-      }, 15000)
+      }, 5000)
     }
     return () => {
       clearInterval(intervalId.current)
