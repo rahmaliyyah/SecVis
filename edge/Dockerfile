@@ -15,4 +15,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Perintah untuk menjalankan program 
-CMD ["python", "main.py"]
+CMD ["python", "main_4.py"]
